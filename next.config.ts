@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  adapterPath: require.resolve("@next-community/adapter-vercel"),
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
