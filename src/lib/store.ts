@@ -1,6 +1,6 @@
 "use client";
 
-import { createStore, Store } from "tinybase";
+import { createMergeableStore, MergeableStore } from "tinybase";
 import { v4 as uuidv4 } from "uuid";
 
 export type Trip = {
@@ -13,6 +13,7 @@ export type Trip = {
 export type Member = {
   id: string;
   tripId: string;
+  userId: string;
   name: string;
   role: "admin" | "member";
   joinedAt: number;
@@ -26,6 +27,7 @@ export type Message = {
   text: string;
   timestamp: number;
   pinned: number; // 0 or 1 (TinyBase uses primitives)
+  editedAt: number;
 };
 
 export type Poll = {
@@ -61,8 +63,8 @@ export type ItineraryEvent = {
   createdAt: number;
 };
 
-export function createAppStore(): Store {
-  const store = createStore();
+export function createAppStore(): MergeableStore {
+  const store = createMergeableStore();
 
   store.setTablesSchema({
     trips: {
@@ -74,6 +76,7 @@ export function createAppStore(): Store {
     members: {
       id: { type: "string" },
       tripId: { type: "string" },
+      userId: { type: "string" },
       name: { type: "string" },
       role: { type: "string", default: "member" },
       joinedAt: { type: "number" },
@@ -86,6 +89,7 @@ export function createAppStore(): Store {
       text: { type: "string" },
       timestamp: { type: "number" },
       pinned: { type: "number", default: 0 },
+      editedAt: { type: "number", default: 0 },
     },
     polls: {
       id: { type: "string" },
@@ -117,14 +121,124 @@ export function createAppStore(): Store {
       location: { type: "string", default: "" },
       createdAt: { type: "number" },
     },
+    readMarkers: {
+      id: { type: "string" },
+      tripId: { type: "string" },
+      userId: { type: "string" },
+      tabName: { type: "string" },
+      lastReadTimestamp: { type: "number" },
+    },
   });
 
   return store;
 }
 
-// Helper functions for store operations
+// --- Identity helpers ---
+
+export function getMemberForTrip(
+  store: MergeableStore,
+  tripId: string,
+  userId: string
+): Record<string, unknown> | null {
+  const members = store.getTable("members");
+  for (const row of Object.values(members)) {
+    if (row.tripId === tripId && row.userId === userId) return row;
+  }
+  return null;
+}
+
+export function resolveAuthorName(
+  store: MergeableStore,
+  tripId: string,
+  authorId: string,
+  fallbackName?: string
+): string {
+  const member = getMemberForTrip(store, tripId, authorId);
+  if (member) return member.name as string;
+  return (fallbackName as string) || "Unknown";
+}
+
+export function isAdmin(
+  store: MergeableStore,
+  tripId: string,
+  userId: string
+): boolean {
+  const member = getMemberForTrip(store, tripId, userId);
+  return member?.role === "admin";
+}
+
+export function getMemberRole(
+  store: MergeableStore,
+  tripId: string,
+  userId: string
+): "admin" | "member" | null {
+  const member = getMemberForTrip(store, tripId, userId);
+  if (!member) return null;
+  return member.role as "admin" | "member";
+}
+
+// --- Trip helpers ---
+
+export function createTrip(
+  store: MergeableStore,
+  name: string,
+  code: string
+): string {
+  const id = uuidv4();
+  store.setRow("trips", id, {
+    id,
+    name,
+    code,
+    createdAt: Date.now(),
+  });
+  return id;
+}
+
+// --- Member helpers ---
+
+export function addMember(
+  store: MergeableStore,
+  tripId: string,
+  userId: string,
+  name: string,
+  role: "admin" | "member" = "member"
+): string {
+  const id = uuidv4();
+  store.setRow("members", id, {
+    id,
+    tripId,
+    userId,
+    name,
+    role,
+    joinedAt: Date.now(),
+  });
+  return id;
+}
+
+export function removeMember(store: MergeableStore, memberId: string): void {
+  store.delRow("members", memberId);
+}
+
+export function setMemberRole(
+  store: MergeableStore,
+  memberId: string,
+  role: "admin" | "member"
+): void {
+  store.setCell("members", memberId, "role", role);
+}
+
+export function updateMemberName(
+  store: MergeableStore,
+  memberId: string,
+  name: string
+): void {
+  store.setCell("members", memberId, "name", name);
+}
+
+// --- Message helpers ---
+
 export function addMessage(
-  store: Store,
+  store: MergeableStore,
   tripId: string,
   authorId: string,
   authorName: string,
@@ -139,17 +253,36 @@ export function addMessage(
     text,
     timestamp: Date.now(),
     pinned: 0,
+    editedAt: 0,
   });
   return id;
 }
 
-export function togglePin(store: Store, messageId: string): void {
+export function updateMessage(
+  store: MergeableStore,
+  messageId: string,
+  text: string
+): void {
+  store.setCell("messages", messageId, "text", text);
+  store.setCell("messages", messageId, "editedAt", Date.now());
+}
+
+export function deleteMessage(
+  store: MergeableStore,
+  messageId: string
+): void {
+  store.delRow("messages", messageId);
+}
+
+export function togglePin(store: MergeableStore, messageId: string): void {
   const current = store.getCell("messages", messageId, "pinned") as number;
   store.setCell("messages", messageId, "pinned", current === 1 ? 0 : 1);
 }
 
+// --- Poll helpers ---
+
 export function addPoll(
-  store: Store,
+  store: MergeableStore,
   tripId: string,
   authorId: string,
   authorName: string,
@@ -171,8 +304,27 @@ export function addPoll(
   return id;
 }
 
+export function closePoll(store: MergeableStore, pollId: string): void {
+  store.setCell("polls", pollId, "closed", 1);
+}
+
+export function reopenPoll(store: MergeableStore, pollId: string): void {
+  store.setCell("polls", pollId, "closed", 0);
+}
+
+export function deletePoll(store: MergeableStore, pollId: string): void {
+  // Delete associated votes first
+  const allVotes = store.getTable("pollVotes");
+  for (const [voteId, vote] of Object.entries(allVotes)) {
+    if (vote.pollId === pollId) {
+      store.delRow("pollVotes", voteId);
+    }
+  }
+  store.delRow("polls", pollId);
+}
+
 export function votePoll(
-  store: Store,
+  store: MergeableStore,
   pollId: string,
   memberId: string,
   memberName: string,
@@ -197,8 +349,10 @@ export function votePoll(
   return id;
 }
 
+// --- Event helpers ---
+
 export function addEvent(
-  store: Store,
+  store: MergeableStore,
   tripId: string,
   authorId: string,
   authorName: string,
@@ -224,34 +378,72 @@ export function addEvent(
   return id;
 }
 
-export function createTrip(
-  store: Store,
-  name: string,
-  code: string
-): string {
-  const id = uuidv4();
-  store.setRow("trips", id, {
-    id,
-    name,
-    code,
-    createdAt: Date.now(),
-  });
-  return id;
+export function updateEvent(
+  store: MergeableStore,
+  eventId: string,
+  fields: Partial<{
+    title: string;
+    description: string;
+    startTime: number;
+    endTime: number;
+    location: string;
+  }>
+): void {
+  for (const [key, value] of Object.entries(fields)) {
+    if (value !== undefined) {
+      store.setCell("events", eventId, key, value);
+    }
+  }
 }
 
-export function addMember(
-  store: Store,
+export function deleteEvent(store: MergeableStore, eventId: string): void {
+  store.delRow("events", eventId);
+}
+
+// --- Read marker helpers ---
+
+export function updateReadMarker(
+  store: MergeableStore,
   tripId: string,
-  name: string,
-  role: "admin" | "member" = "member"
-): string {
+  userId: string,
+  tabName: string
+): void {
+  const markers = store.getTable("readMarkers");
+  for (const [id, marker] of Object.entries(markers)) {
+    if (
+      marker.tripId === tripId &&
+      marker.userId === userId &&
+      marker.tabName === tabName
+    ) {
+      store.setCell("readMarkers", id, "lastReadTimestamp", Date.now());
+      return;
+    }
+  }
   const id = uuidv4();
-  store.setRow("members", id, {
+  store.setRow("readMarkers", id, {
     id,
     tripId,
-    name,
-    role,
-    joinedAt: Date.now(),
+    userId,
+    tabName,
+    lastReadTimestamp: Date.now(),
   });
-  return id;
+}
+
+export function getReadMarkerTimestamp(
+  store: MergeableStore,
+  tripId: string,
+  userId: string,
+  tabName: string
+): number {
+  const markers = store.getTable("readMarkers");
+  for (const marker of Object.values(markers)) {
+    if (
+      marker.tripId === tripId &&
+      marker.userId === userId &&
+      marker.tabName === tabName
+    ) {
+      return marker.lastReadTimestamp as number;
+    }
+  }
+  return 0;
 }

@@ -6,6 +6,7 @@ import { togglePin } from "@/lib/store";
 import { formatTime } from "@/lib/utils";
 import { Pin, PinOff, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { AuthorName } from "@/components/author-name";
 
 export default function BoardPage() {
   const params = useParams();
@@ -30,18 +31,22 @@ export default function BoardPage() {
         </p>
 
         {pinned.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-foreground-tertiary">
-            <Pin className="mb-3 h-8 w-8" />
-            <p className="mb-1">No pinned messages yet</p>
-            <p>
-              Pin important messages from{" "}
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-subtle">
+              <Pin className="h-7 w-7 text-accent" />
+            </div>
+            <h3 className="mb-1 font-medium text-foreground-secondary">
+              No pinned messages yet
+            </h3>
+            <p className="max-w-xs text-sm text-foreground-tertiary">
+              Pin important messages, links, and reminders from{" "}
               <Link
                 href={`/trip/${tripId}`}
                 className="text-accent hover:underline"
               >
                 chat
               </Link>{" "}
-              to see them here
+              so they&apos;re easy to find.
             </p>
           </div>
         ) : (
@@ -53,9 +58,12 @@ export default function BoardPage() {
               >
                 <div className="mb-2 flex items-start justify-between">
                   <div>
-                    <span className="text-sm font-medium">
-                      {msg.authorName as string}
-                    </span>
+                    <AuthorName
+                      tripId={tripId}
+                      authorId={msg.authorId as string}
+                      fallbackName={msg.authorName as string}
+                      className="text-sm font-medium"
+                    />
                     <span className="ml-2 text-xs text-foreground-tertiary">
                       {formatTime(msg.timestamp as number)}
                     </span>

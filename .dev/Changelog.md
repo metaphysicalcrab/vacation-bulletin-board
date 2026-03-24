@@ -14,6 +14,34 @@ FORMAT:
 - Decisions made (reference DEC-### in Decisions.md if logged)
 -->
 
+## 2026-03-24 — Major: Multi-User Sync, CRUD, Polish
+**Focus:** Fix broken multi-user model, add real-time sync, full CRUD on all entities, and UX polish
+- **Phase 1 — Foundation:**
+  - Migrated `createStore()` to `createMergeableStore()` (CRDT-based, enables sync) (DEC-005)
+  - Fixed member identity: added `userId` field, switched from name-based to ID-based lookups (DEC-006)
+  - Added `AuthorName` component for live author name resolution via members table
+  - Added WebSocket sync server (`server/`) using TinyBase `createWsServer` for multi-device sync (DEC-007)
+  - Added `WsSynchronizer` client with auto-reconnect (exponential backoff)
+  - Added `BroadcastChannelSynchronizer` for same-browser tab sync
+  - Added connection status indicator (green/amber/gray dot) in trip header
+  - Data migration for existing member rows without `userId`
+- **Phase 2 — Core CRUD:**
+  - Message edit/delete with inline editing and "(edited)" indicator
+  - Event edit/delete with form reuse
+  - Poll close/reopen with "Closed" badge and disabled voting
+  - Poll delete with vote cascade
+  - Member list slide-out panel (Users icon in header)
+  - Role enforcement: admins can delete others' content, promote/demote members, remove members
+- **Phase 3 — Polish:**
+  - Search in chat (message text) and itinerary (title/description/location)
+  - Unread indicators (copper dots on tab icons for new content)
+  - Read markers table for tracking per-user, per-tab last-read timestamps
+  - Rich empty states with icons, descriptions, and action buttons
+  - CSS animations (slide-in, fade-in) for panels
+  - Accessibility: skip-to-content link, ARIA roles/labels on nav and buttons
+- **Decisions:** DEC-005, DEC-006, DEC-007, DEC-008
+- **New files:** `src/components/author-name.tsx`, `src/components/member-list.tsx`, `server/index.js`, `server/package.json`
+
 ## 2026-03-24 — Documentation Overhaul
 **Focus:** Fill in all incomplete `.dev/` documentation
 - Populated Architecture.md with full system overview, component map, data flow, data model, directory structure

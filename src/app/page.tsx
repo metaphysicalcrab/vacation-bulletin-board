@@ -37,7 +37,7 @@ export default function HomePage() {
     if (!tripName.trim() || !currentUser) return;
     const code = generateTripCode();
     const tripId = createTrip(store, tripName.trim(), code);
-    addMember(store, tripId, currentUser.name, "admin");
+    addMember(store, tripId, currentUser.id, currentUser.name, "admin");
     setCurrentTripId(tripId);
     router.push(`/trip/${tripId}`);
   }
@@ -62,10 +62,10 @@ export default function HomePage() {
     // Check if already a member
     const members = store.getTable("members");
     const alreadyMember = Object.values(members).some(
-      (m) => m.tripId === tripId && m.name === currentUser.name
+      (m) => m.tripId === tripId && m.userId === currentUser.id
     );
     if (!alreadyMember) {
-      addMember(store, tripId, currentUser.name, "member");
+      addMember(store, tripId, currentUser.id, currentUser.name, "member");
     }
 
     setCurrentTripId(tripId);

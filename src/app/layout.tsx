@@ -29,7 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full bg-background text-foreground antialiased">
-        <StoreProvider>{children}</StoreProvider>
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
+        <StoreProvider>
+          <div id="main-content">{children}</div>
+        </StoreProvider>
       </body>
     </html>
   );
