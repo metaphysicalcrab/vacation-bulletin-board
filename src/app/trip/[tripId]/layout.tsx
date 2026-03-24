@@ -41,16 +41,16 @@ export default function TripLayout({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+      <header className="flex items-center gap-3 border-b border-border-subtle bg-surface px-4 py-3">
         <Link
           href="/"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-foreground-secondary transition-colors hover:bg-surface-hover"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-lg font-semibold">{tripName}</h1>
-          <p className="text-xs text-gray-400">Code: {tripCode}</p>
+          <p className="text-xs text-foreground-tertiary">Code: {tripCode}</p>
         </div>
       </header>
 
@@ -58,7 +58,7 @@ export default function TripLayout({
       <main className="flex-1 overflow-hidden">{children}</main>
 
       {/* Bottom Navigation */}
-      <nav className="flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)]">
+      <nav className="flex border-t border-border-subtle bg-surface pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const href = `/trip/${tripId}${item.href}`;
           const isActive =
@@ -73,8 +73,8 @@ export default function TripLayout({
               className={cn(
                 "flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors",
                 isActive
-                  ? "text-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
+                  ? "text-accent"
+                  : "text-foreground-tertiary hover:text-foreground-secondary"
               )}
             >
               <item.icon className="h-5 w-5" />

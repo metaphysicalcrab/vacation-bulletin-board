@@ -42,7 +42,7 @@ export default function ChatPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
         {sorted.length === 0 && (
-          <div className="flex h-full items-center justify-center text-center text-sm text-gray-400">
+          <div className="flex h-full items-center justify-center text-center text-sm text-foreground-tertiary">
             <div>
               <p className="mb-1">No messages yet</p>
               <p>Start the conversation!</p>
@@ -61,7 +61,7 @@ export default function ChatPage() {
                 )}
               >
                 {!isOwn && (
-                  <span className="mb-0.5 px-1 text-xs font-medium text-gray-500">
+                  <span className="mb-0.5 px-1 text-xs font-medium text-foreground-secondary">
                     {msg.authorName as string}
                   </span>
                 )}
@@ -75,7 +75,7 @@ export default function ChatPage() {
                       <Pin
                         className={cn(
                           "h-3.5 w-3.5",
-                          msg.pinned ? "text-blue-500" : "text-gray-300"
+                          msg.pinned ? "text-pinned-icon" : "text-pinned-icon-inactive"
                         )}
                       />
                     </button>
@@ -84,9 +84,9 @@ export default function ChatPage() {
                     className={cn(
                       "max-w-[75vw] rounded-2xl px-4 py-2 text-sm",
                       isOwn
-                        ? "rounded-br-md bg-blue-600 text-white"
-                        : "rounded-bl-md bg-white text-gray-900 shadow-sm",
-                      (msg.pinned as number) === 1 && "ring-2 ring-blue-300"
+                        ? "rounded-br-md bg-chat-own text-chat-own-text"
+                        : "rounded-bl-md bg-chat-other text-chat-other-text",
+                      (msg.pinned as number) === 1 && "ring-2 ring-pinned-ring"
                     )}
                   >
                     {msg.text as string}
@@ -100,13 +100,13 @@ export default function ChatPage() {
                       <Pin
                         className={cn(
                           "h-3.5 w-3.5",
-                          msg.pinned ? "text-blue-500" : "text-gray-300"
+                          msg.pinned ? "text-pinned-icon" : "text-pinned-icon-inactive"
                         )}
                       />
                     </button>
                   )}
                 </div>
-                <span className="mt-0.5 px-1 text-[10px] text-gray-400">
+                <span className="mt-0.5 px-1 text-[10px] text-foreground-tertiary">
                   {formatTime(msg.timestamp as number)}
                 </span>
               </div>
@@ -119,20 +119,20 @@ export default function ChatPage() {
       {/* Input */}
       <form
         onSubmit={handleSend}
-        className="flex items-center gap-2 border-t border-gray-200 bg-white px-4 py-3"
+        className="flex items-center gap-2 border-t border-border-subtle bg-surface px-4 py-3"
       >
         <input
           ref={inputRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-300"
+          className="flex-1 rounded-full border border-border bg-surface-inset px-4 py-2 text-sm text-foreground placeholder:text-foreground-tertiary outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           autoFocus
         />
         <button
           type="submit"
           disabled={!text.trim()}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
         </button>

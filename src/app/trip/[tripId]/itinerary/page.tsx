@@ -79,7 +79,7 @@ export default function ItineraryPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Itinerary</h2>
-            <p className="text-sm text-gray-500">Shared trip schedule</p>
+            <p className="text-sm text-foreground-secondary">Shared trip schedule</p>
           </div>
           <Button
             size="sm"
@@ -99,7 +99,7 @@ export default function ItineraryPage() {
         {showCreate && (
           <form
             onSubmit={handleCreate}
-            className="mb-6 space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+            className="mb-6 space-y-3 rounded-xl border border-border bg-surface p-4"
           >
             <Input
               value={title}
@@ -123,7 +123,7 @@ export default function ItineraryPage() {
             />
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-foreground-secondary">
                   Start Date
                 </label>
                 <Input
@@ -136,7 +136,7 @@ export default function ItineraryPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-foreground-secondary">
                   Start Time
                 </label>
                 <Input
@@ -146,7 +146,7 @@ export default function ItineraryPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-foreground-secondary">
                   End Date
                 </label>
                 <Input
@@ -156,7 +156,7 @@ export default function ItineraryPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-foreground-secondary">
                   End Time
                 </label>
                 <Input
@@ -179,7 +179,7 @@ export default function ItineraryPage() {
 
         {/* Events Timeline */}
         {sortedEvents.length === 0 && !showCreate && (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-foreground-tertiary">
             <Calendar className="mb-3 h-8 w-8" />
             <p className="mb-1">No events scheduled</p>
             <p>Add events to plan your trip!</p>
@@ -189,7 +189,7 @@ export default function ItineraryPage() {
         <div className="space-y-6">
           {Object.entries(groupedEvents).map(([day, dayEvents]) => (
             <div key={day}>
-              <h3 className="mb-2 text-sm font-semibold text-gray-600">
+              <h3 className="mb-2 text-sm font-semibold text-foreground-secondary">
                 {day}
               </h3>
               <div className="space-y-2">
@@ -199,19 +199,19 @@ export default function ItineraryPage() {
                     <div
                       key={event.id as string}
                       className={cn(
-                        "rounded-xl border bg-white p-4 shadow-sm",
+                        "rounded-xl border bg-surface p-4",
                         isPast
-                          ? "border-gray-100 opacity-60"
-                          : "border-gray-200"
+                          ? "border-border-subtle opacity-60"
+                          : "border-border"
                       )}
                     >
                       <h4 className="font-medium">{event.title as string}</h4>
                       {(event.description as string) ? (
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-foreground-secondary">
                           {event.description as string}
                         </p>
                       ) : null}
-                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-foreground-secondary">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
                           {formatEventTime(event.startTime as number)}
@@ -230,7 +230,7 @@ export default function ItineraryPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-[10px] text-gray-400">
+                      <p className="mt-1 text-[10px] text-foreground-tertiary">
                         Added by {event.authorName as string}
                       </p>
                     </div>

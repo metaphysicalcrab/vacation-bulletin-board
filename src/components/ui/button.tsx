@@ -5,11 +5,11 @@ type Variant = "default" | "outline" | "ghost" | "destructive";
 type Size = "default" | "sm" | "lg" | "icon";
 
 const variantStyles: Record<Variant, string> = {
-  default: "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800",
+  default: "bg-accent text-accent-foreground hover:bg-accent-hover active:bg-accent-active",
   outline:
-    "border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 active:bg-gray-100",
-  ghost: "text-gray-700 hover:bg-gray-100 active:bg-gray-200",
-  destructive: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
+    "border border-border bg-surface text-foreground hover:bg-surface-hover active:bg-surface-active",
+  ghost: "text-foreground-secondary hover:bg-surface-hover active:bg-surface-active",
+  destructive: "bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-active",
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
         variantStyles[variant],
         sizeStyles[size],
         className
