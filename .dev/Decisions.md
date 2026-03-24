@@ -19,6 +19,42 @@ TEMPLATE — Copy for each new decision:
 - **Related:** Links to relevant learnings, architecture sections, or other decisions.
 -->
 
+## DEC-008 — Context Menu Pattern for Edit/Delete Actions
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** Needed a UI pattern for edit/delete on messages, events, and polls that fits the casual mobile-first design.
+- **Options Considered:**
+  1. **Modal dialogs** — Pros: familiar / Cons: heavyweight, interrupts flow
+  2. **Long-press context menu** — Pros: mobile-native / Cons: not discoverable, no hover equivalent
+  3. **Hover-reveal inline action buttons** — Pros: discoverable on desktop, compact / Cons: less visible on mobile
+- **Decision:** Hover-reveal inline action buttons with inline confirmation for destructive actions ("Delete? Yes/No"). No modals. Consistent across chat, itinerary, and polls.
+- **Consequences:** On mobile, users tap the message area to reveal actions. Inline confirmations prevent accidental deletes.
+
+## DEC-007 — WebSocket Relay Server for Multi-Device Sync
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** Multi-user experience was broken — each browser had isolated localStorage. Needed true multi-device sync for simultaneous collaboration.
+- **Options Considered:**
+  1. **BroadcastChannel only** — Pros: no server / Cons: same-browser only
+  2. **Custom WebSocket relay** — Pros: works cross-device / Cons: need to maintain server
+  3. **TinyBase built-in WsServer** — Pros: minimal code, CRDT merge, path-based rooms / Cons: requires hosted server
+- **Decision:** TinyBase `createWsServer` with `createWsSynchronizer` client. Each trip ID maps to a WebSocket "path" (room). Server is ~15 lines. BroadcastChannel added alongside for tab-local sync.
+- **Consequences:** Requires `MergeableStore` (CRDT). Server must be deployed separately. localStorage kept as offline fallback. Auto-reconnect with exponential backoff.
+
+## DEC-006 — Denormalized authorName as Fallback Cache
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** `authorName` was baked into every message/poll/event. Name changes would make old records stale.
+- **Decision:** Keep `authorName` in schema as a write-once fallback. New code resolves names live via `resolveAuthorName()` and `<AuthorName>` component which looks up the members table by userId.
+- **Consequences:** Display code always shows current name. Fallback handles orphaned records where member has been removed.
+
+## DEC-005 — ID-Based Member Identity
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** Members were identified by name (`m.name === currentUser.name`). Two users with same name would collide. Name changes broke association.
+- **Decision:** Added `userId` field to members table storing `currentUser.id` (browser-generated UUID). Membership checks use `m.userId === currentUser.id`.
+- **Consequences:** Existing data migrated via one-time backfill in StoreProvider. Two "John" users now get separate member records.
+
 ## DEC-004 — Bottom Tab Navigation for Trip Pages
 - **Date:** 2026-03-23
 - **Status:** Accepted

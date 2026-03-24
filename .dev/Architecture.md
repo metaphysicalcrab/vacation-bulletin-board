@@ -1,11 +1,11 @@
 # Architecture — Vacation Bulletin Board
 
-> **Last updated:** 2026-03-24
+> **Last updated:** 2026-03-24 (sync + CRUD update)
 > Claude Code: Update this doc when adding components, changing relationships, or modifying infrastructure.
 
 ## System Overview
 
-Voyage Board is a local-first vacation coordination app. Groups create or join a trip via a shared code, then collaborate through chat messages, a pinned bulletin board, polls, and a shared itinerary. All data is stored client-side using TinyBase with localStorage persistence — there is no backend or authentication server.
+Voyage Board is a local-first vacation coordination app. Groups create or join a trip via a shared code, then collaborate through chat messages, a pinned bulletin board, polls, and a shared itinerary. Data is stored client-side using TinyBase MergeableStore with localStorage persistence as an offline fallback. Multi-device sync is handled via a WebSocket relay server using TinyBase's built-in synchronizers (CRDT-based). Same-browser tab sync uses BroadcastChannel. No authentication — identity is browser-based (UUID generated on first visit).
 
 ## Tech Stack
 
@@ -13,7 +13,9 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 |-------|-----------|-------|
 | Frontend | Next.js 15 / React 19 | App Router |
 | Styling | Tailwind CSS v4 | With PostCSS, `@theme inline` for semantic tokens |
-| Data | TinyBase v8 | Local data store with schema validation |
+| Data | TinyBase v8 (MergeableStore) | CRDT-based local data store with schema validation and sync |
+| Sync | TinyBase WsSynchronizer + BroadcastChannel | Multi-device WebSocket sync + same-browser tab sync |
+| Sync Server | TinyBase WsServer | Lightweight WebSocket relay (`server/`) |
 | Language | TypeScript 5 | Strict mode |
 | Icons | Lucide React | SVG icon library |
 | Utilities | CVA, clsx, tailwind-merge | Component variants & class merging |
@@ -21,10 +23,28 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 ## Component Map
 
 ### Component: StoreProvider
-- **Purpose:** Initializes TinyBase store, manages current user/trip state, hydrates from localStorage
+- **Purpose:** Initializes TinyBase MergeableStore, manages current user/trip state, hydrates from localStorage, sets up BroadcastChannel and WebSocket sync
 - **Location:** `/src/lib/store-context.tsx`
-- **Dependencies:** TinyBase `Store`, `createAppStore()`
-- **API/Interface:** React Context providing `store`, `currentUser`, `currentTripId`, `setCurrentUser`, `setCurrentTripId`
+- **Dependencies:** TinyBase `MergeableStore`, `createAppStore()`, `createBroadcastChannelSynchronizer`, `createWsSynchronizer`
+- **API/Interface:** React Context providing `store`, `currentUser`, `currentTripId`, `connectionStatus`, `setCurrentUser`, `setCurrentTripId`
+- **Sync:** BroadcastChannel for tab sync (always on), WebSocket for multi-device (connects when tripId is set, auto-reconnects with exponential backoff)
+
+### Component: AuthorName
+- **Purpose:** Reactively resolves a userId to a display name via the members table
+- **Location:** `/src/components/author-name.tsx`
+- **Dependencies:** `useMemberName` hook from store-context
+- **Props:** `tripId`, `authorId`, `fallbackName?`, `className?`
+
+### Component: MemberList
+- **Purpose:** Slide-out panel showing trip members with admin actions (promote/demote, remove)
+- **Location:** `/src/components/member-list.tsx`
+- **Dependencies:** `useTableRows`, `isAdmin`, `setMemberRole`, `removeMember`
+
+### Component: Sync Server
+- **Purpose:** WebSocket relay for multi-device TinyBase sync
+- **Location:** `/server/index.js`
+- **Dependencies:** `tinybase/synchronizers/synchronizer-ws-server`, `ws`
+- **Architecture:** Each trip ID maps to a WebSocket path/room. Server routes sync messages between clients on the same path.
 
 ### Component: Home Page
 - **Purpose:** Entry point — user sign-up, trip creation, trip joining, trip listing

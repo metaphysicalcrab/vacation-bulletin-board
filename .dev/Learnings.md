@@ -45,3 +45,23 @@
 - **Solution/Workaround:** Removed unused dependencies (commit 29674c6).
 - **Prevention:** Clean up unused dependencies before deploying. Run the build locally before pushing.
 - **Related:** Git commit 29674c6
+
+## L-005 — MergeableStore required for TinyBase synchronization
+- **Date:** 2026-03-24
+- **Category:** Gotcha
+- **Severity:** High
+- **What happened:** Attempted to use TinyBase synchronizers with regular `Store`.
+- **Root cause:** Synchronizers (WsSynchronizer, BroadcastChannelSynchronizer) require `MergeableStore` which includes HLC timestamps and CRDT merge logic. Regular `Store` has no conflict resolution metadata.
+- **Solution/Workaround:** Migrated `createStore()` to `createMergeableStore()`. The API is backwards-compatible — all existing `setRow`, `getTable`, etc. calls work unchanged.
+- **Prevention:** Use `MergeableStore` from the start if sync is a possibility. It has no downside for single-device use.
+- **Related:** DEC-007, `src/lib/store.ts`
+
+## L-006 — WebSocket sync uses URL path as room identifier
+- **Date:** 2026-03-24
+- **Category:** Pattern
+- **Severity:** Low
+- **What happened:** TinyBase WsServer uses the WebSocket URL path to route messages between clients. Clients connecting to `ws://server/trip123` only sync with other clients on the same path.
+- **Root cause:** By design — TinyBase WsServer listens to any path, treating each as a distinct "room".
+- **Solution/Workaround:** Use `tripId` as the WebSocket URL path (e.g., `ws://localhost:8048/{tripId}`). This naturally isolates trip data.
+- **Prevention:** N/A — this is the intended usage pattern.
+- **Related:** `server/index.js`, `src/lib/store-context.tsx`
