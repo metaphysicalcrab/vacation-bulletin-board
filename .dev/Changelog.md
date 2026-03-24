@@ -14,6 +14,16 @@ FORMAT:
 - Decisions made (reference DEC-### in Decisions.md if logged)
 -->
 
+## 2026-03-24 — Improve User Management & Multi-User Experience
+**Focus:** Six UX improvements to user identity, member management, and visual identity
+- **Filtered trip list:** Home page now only shows trips the current user belongs to, with empty state message
+- **User registry:** "Switch user" preserves identities in localStorage registry instead of generating new UUIDs (fixes orphaned trip memberships)
+- **Name editing:** Users can edit their display name from both the home page greeting and the member list panel; changes propagate to all member records via CRDT-safe updates
+- **Mobile-friendly admin actions:** Replaced hover-only opacity reveal with tap-to-expand pattern in member list
+- **Leave trip:** Users can voluntarily leave a trip from the member list (with sole-admin safeguard)
+- **User avatars:** Deterministic colored circles with initials based on userId hash; shown in member list, home greeting, and chat messages (grouped by consecutive author)
+- Files changed: `page.tsx`, `store-context.tsx`, `store.ts`, `member-list.tsx`, `message-item.tsx`, new `user-avatar.tsx`
+
 ## 2026-03-24 — Fix: Bottom Menu Bar Not Pinned to Screen Bottom
 **Focus:** Bug fix — menu bar positioning broken by missing height on wrapper div
 - Root cause: `<div id="main-content">` in root layout was missing `h-full`, breaking the height chain from `html` → `body` → content

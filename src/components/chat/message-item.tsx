@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/utils";
 import { AuthorName } from "@/components/author-name";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { UserAvatar } from "@/components/user-avatar";
 import type { Message } from "@/lib/store";
 
 export function MessageItem({
   msg,
   tripId,
   isOwn,
+  isFirstInGroup = true,
   canEdit,
   canDelete,
   onEdit,
@@ -21,6 +23,7 @@ export function MessageItem({
   msg: Message;
   tripId: string;
   isOwn: boolean;
+  isFirstInGroup?: boolean;
   canEdit: boolean;
   canDelete: boolean;
   onEdit: (messageId: string, text: string) => void;
@@ -64,11 +67,22 @@ export function MessageItem({
   return (
     <div
       className={cn(
-        "flex flex-col",
-        isOwn ? "items-end" : "items-start"
+        "flex",
+        isOwn ? "justify-end" : "justify-start"
       )}
     >
+      {/* Avatar for non-own messages */}
       {!isOwn && (
+        <div className="mr-2 flex flex-col justify-end">
+          {isFirstInGroup ? (
+            <UserAvatar userId={msg.authorId} name={msg.authorName} size="sm" />
+          ) : (
+            <div className="h-6 w-6" />
+          )}
+        </div>
+      )}
+      <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
+      {!isOwn && isFirstInGroup && (
         <AuthorName
           tripId={tripId}
           authorId={msg.authorId}
@@ -193,6 +207,7 @@ export function MessageItem({
       <span className="mt-0.5 px-1 text-[10px] text-foreground-tertiary">
         {formatTime(msg.timestamp)}
       </span>
+      </div>
     </div>
   );
 }

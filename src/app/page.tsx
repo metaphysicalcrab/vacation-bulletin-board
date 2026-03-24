@@ -7,19 +7,22 @@ import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store-context";
 import { createTrip, addMember } from "@/lib/store";
 import { generateTripCode } from "@/lib/utils";
-import { Anchor, Plus, Users } from "lucide-react";
+import { Anchor, Plus, Users, UserPlus, Pencil, Check, X } from "lucide-react";
+import { UserAvatar } from "@/components/user-avatar";
 
 export default function HomePage() {
   const router = useRouter();
-  const { store, currentUser, setCurrentUser, setCurrentTripId } =
+  const { store, currentUser, knownUsers, setCurrentUser, setCurrentTripId, renameCurrentUser } =
     useAppStore();
-  const [view, setView] = useState<"home" | "create" | "join" | "name">(
+  const [view, setView] = useState<"home" | "create" | "join" | "name" | "select">(
     currentUser ? "home" : "name"
   );
   const [userName, setUserName] = useState("");
   const [tripName, setTripName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
 
   function handleSetName(e: React.FormEvent) {
     e.preventDefault();
@@ -72,9 +75,17 @@ export default function HomePage() {
     router.push(`/trip/${tripId}`);
   }
 
-  // Show existing trips
-  const trips = store.getTable("trips");
-  const tripList = Object.values(trips);
+  // Show only trips the current user belongs to
+  const allTrips = store.getTable("trips");
+  const allMembers = store.getTable("members");
+  const userTripIds = new Set(
+    Object.values(allMembers)
+      .filter((m) => m.userId === currentUser?.id)
+      .map((m) => m.tripId as string)
+  );
+  const tripList = Object.values(allTrips).filter((t) =>
+    userTripIds.has(t.id as string)
+  );
 
   if (view === "name") {
     return (
@@ -116,13 +127,64 @@ export default function HomePage() {
     <div className="flex h-full flex-col items-center p-6">
       <div className="w-full max-w-sm space-y-6 pt-12">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-            <Anchor className="h-8 w-8" />
-          </div>
+          {currentUser ? (
+            <div className="mx-auto mb-4">
+              <UserAvatar userId={currentUser.id} name={currentUser.name} size="lg" className="mx-auto" />
+            </div>
+          ) : (
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+              <Anchor className="h-8 w-8" />
+            </div>
+          )}
           <h1 className="text-2xl font-bold">Voyage Board</h1>
-          <p className="mt-1 text-sm text-foreground-secondary">
-            Hey {currentUser?.name}!
-          </p>
+          {isEditingName ? (
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-40 text-center text-sm"
+                maxLength={30}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && editName.trim()) {
+                    renameCurrentUser(editName.trim());
+                    setIsEditingName(false);
+                  }
+                  if (e.key === "Escape") setIsEditingName(false);
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (editName.trim()) {
+                    renameCurrentUser(editName.trim());
+                    setIsEditingName(false);
+                  }
+                }}
+                className="rounded p-1 text-accent hover:bg-surface-hover"
+                aria-label="Save name"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setIsEditingName(false)}
+                className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover"
+                aria-label="Cancel editing"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => {
+                setEditName(currentUser?.name || "");
+                setIsEditingName(true);
+              }}
+              className="mt-1 inline-flex items-center gap-1 text-sm text-foreground-secondary hover:text-foreground"
+            >
+              Hey {currentUser?.name}!
+              <Pencil className="h-3 w-3" />
+            </button>
+          )}
         </div>
 
         {view === "home" && (
@@ -145,11 +207,11 @@ export default function HomePage() {
               Join a Trip
             </Button>
 
-            {tripList.length > 0 && (
-              <div className="pt-4">
-                <h2 className="mb-2 text-sm font-medium text-foreground-secondary">
-                  Your Trips
-                </h2>
+            <div className="pt-4">
+              <h2 className="mb-2 text-sm font-medium text-foreground-secondary">
+                Your Trips
+              </h2>
+              {tripList.length > 0 ? (
                 <div className="space-y-2">
                   {tripList.map((trip) => (
                     <button
@@ -170,14 +232,15 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="text-center text-sm text-foreground-tertiary py-4">
+                  No trips yet. Create one or join with a code!
+                </p>
+              )}
+            </div>
 
             <button
-              onClick={() => {
-                setCurrentUser(null);
-                setView("name");
-              }}
+              onClick={() => setView("select")}
               className="w-full pt-2 text-center text-xs text-foreground-tertiary hover:text-foreground-secondary"
             >
               Switch user
@@ -254,6 +317,48 @@ export default function HomePage() {
               </Button>
             </div>
           </form>
+        )}
+
+        {view === "select" && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-medium">Switch to</h2>
+            <div className="space-y-2">
+              {knownUsers
+                .filter((u) => u.id !== currentUser?.id)
+                .map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => {
+                      setCurrentUser(user);
+                      setView("home");
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-active"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium">{user.name}</span>
+                  </button>
+                ))}
+            </div>
+            <Button
+              onClick={() => {
+                setCurrentUser(null);
+                setView("name");
+              }}
+              variant="outline"
+              className="w-full gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add new person
+            </Button>
+            <button
+              onClick={() => setView("home")}
+              className="w-full text-center text-xs text-foreground-tertiary hover:text-foreground-secondary"
+            >
+              Cancel
+            </button>
+          </div>
         )}
       </div>
     </div>
