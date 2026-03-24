@@ -1,6 +1,6 @@
 # Architecture — Vacation Bulletin Board
 
-> **Last updated:** 2026-03-24 (sync + CRUD update)
+> **Last updated:** 2026-03-24 (user management improvements)
 > Claude Code: Update this doc when adding components, changing relationships, or modifying infrastructure.
 
 ## System Overview
@@ -26,8 +26,9 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 - **Purpose:** Initializes TinyBase MergeableStore, manages current user/trip state, hydrates from localStorage, sets up BroadcastChannel and WebSocket sync
 - **Location:** `/src/lib/store-context.tsx`
 - **Dependencies:** TinyBase `MergeableStore`, `createAppStore()`, `createBroadcastChannelSynchronizer`, `createWsSynchronizer`
-- **API/Interface:** React Context providing `store`, `currentUser`, `currentTripId`, `connectionStatus`, `setCurrentUser`, `setCurrentTripId`
+- **API/Interface:** React Context providing `store`, `currentUser`, `knownUsers`, `currentTripId`, `connectionStatus`, `setCurrentUser`, `setCurrentTripId`, `renameCurrentUser`
 - **Sync:** BroadcastChannel for tab sync (always on), WebSocket for multi-device (connects when tripId is set, auto-reconnects with exponential backoff)
+- **User Registry:** Maintains `vacation-bb-users` localStorage key with array of `{ id, name }` for all known identities. `setCurrentUser` auto-adds to registry. `renameCurrentUser` updates registry + all member records.
 
 ### Component: AuthorName
 - **Purpose:** Reactively resolves a userId to a display name via the members table
@@ -36,9 +37,16 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 - **Props:** `tripId`, `authorId`, `fallbackName?`, `className?`
 
 ### Component: MemberList
-- **Purpose:** Slide-out panel showing trip members with admin actions (promote/demote, remove)
+- **Purpose:** Slide-out panel showing trip members with admin actions (promote/demote, remove), name editing, leave trip, and user avatars
 - **Location:** `/src/components/member-list.tsx`
-- **Dependencies:** `useMembers`, `isAdmin`, `setMemberRole`, `removeMember`, `ConfirmDialog`
+- **Dependencies:** `useMembers`, `isAdmin`, `isLastAdmin`, `setMemberRole`, `removeMember`, `ConfirmDialog`, `UserAvatar`, `Input`
+- **Interaction:** Admin actions use tap-to-expand pattern (not hover) for mobile compatibility. Current user can edit their name inline and leave the trip.
+
+### Component: UserAvatar
+- **Purpose:** Deterministic colored circle with initial letter, generated from userId hash
+- **Location:** `/src/components/user-avatar.tsx`
+- **Props:** `userId`, `name`, `size?` ("sm" | "md" | "lg"), `className?`
+- **Used by:** MemberList, Home Page, MessageItem
 
 ### Component: ConfirmDialog
 - **Purpose:** Reusable inline confirmation prompt (message + Yes/No buttons)
@@ -51,9 +59,10 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 - **Used by:** Chat page
 
 ### Component: MessageItem
-- **Purpose:** Single chat message with bubble, metadata, edit/delete/pin actions
+- **Purpose:** Single chat message with bubble, metadata, edit/delete/pin actions, and avatar for non-own messages
 - **Location:** `/src/components/chat/message-item.tsx`
-- **Dependencies:** `AuthorName`, `ConfirmDialog`, `formatTime`
+- **Dependencies:** `AuthorName`, `ConfirmDialog`, `UserAvatar`, `formatTime`
+- **Props:** Includes `isFirstInGroup?` to show avatar only for first message in a consecutive run from same author
 
 ### Component: ChatInput
 - **Purpose:** Bottom chat input form with send/search buttons
@@ -84,9 +93,10 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 - **Architecture:** Each trip ID maps to a WebSocket path/room. Server routes sync messages between clients on the same path.
 
 ### Component: Home Page
-- **Purpose:** Entry point — user sign-up, trip creation, trip joining, trip listing
+- **Purpose:** Entry point — user sign-up, user switching (with identity registry), name editing, trip creation, trip joining, trip listing (filtered to user's memberships)
 - **Location:** `/src/app/page.tsx`
-- **Dependencies:** StoreProvider context, store helpers (`createTrip`, `addMember`)
+- **Dependencies:** StoreProvider context, store helpers (`createTrip`, `addMember`), `UserAvatar`
+- **Views:** `name` (signup), `home` (main), `create`, `join`, `select` (user picker)
 
 ### Component: Trip Layout
 - **Purpose:** Shared layout for all trip pages — top header (trip name/code) + bottom tab navigation
@@ -133,7 +143,7 @@ Page Components
     → TinyBase store updates → listener fires → useSyncExternalStore re-renders
 ```
 
-**Persistence:** `StoreProvider` loads from `vacation-bb-store` localStorage key on mount, and attaches a `addTablesListener` that writes back on every change. User identity is stored separately in `vacation-bb-user`.
+**Persistence:** `StoreProvider` loads from `vacation-bb-store` localStorage key on mount, and attaches a `addTablesListener` that writes back on every change. Active user identity is stored in `vacation-bb-user`. All known user identities are stored in `vacation-bb-users` (array) for the user switcher.
 
 ## Data Model
 
@@ -191,9 +201,8 @@ None. This is a fully client-side application with no external APIs, backend ser
 
 ## Known Constraints & Technical Debt
 
-- **No backend:** All data is localStorage-only. No sync between devices or users. Multiple users on the same trip must share a browser or manually coordinate.
-- **No authentication:** User identity is a self-declared name stored in localStorage. No verification.
+- **No backend:** All data is localStorage-only with optional WebSocket relay for multi-device sync.
+- **No authentication:** User identity is a self-declared name + browser-generated UUID stored in localStorage. No verification.
 - **TinyBase boolean limitation:** TinyBase only supports string/number primitives. Booleans are stored as 0/1 numbers (e.g., `pinned`, `closed`).
 - **Poll options as JSON string:** The `options` field in polls is a JSON-stringified array because TinyBase doesn't support array cell values.
-- **No edit/delete on messages or events:** Currently read-only after creation (pins are the exception).
-- **No role enforcement:** Member roles ("admin"/"member") are tracked but not enforced in the UI.
+- **No role enforcement:** Member roles ("admin"/"member") are tracked but only partially enforced (admin actions in member list, sole-admin leave protection).

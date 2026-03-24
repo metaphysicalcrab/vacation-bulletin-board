@@ -19,6 +19,24 @@ TEMPLATE — Copy for each new decision:
 - **Related:** Links to relevant learnings, architecture sections, or other decisions.
 -->
 
+## DEC-010 — Tap-to-Expand for Member Admin Actions (Mobile)
+- **Date:** 2026-03-24
+- **Status:** Accepted (partially supersedes DEC-008 for member list)
+- **Context:** DEC-008's hover-reveal pattern doesn't work on touch devices — admin actions in the member list were invisible on mobile.
+- **Decision:** Member list uses tap-to-expand: tapping a member row reveals action buttons below in a visible row with text labels. Chat message actions remain hover-reveal (DEC-008).
+- **Consequences:** Admin actions are now accessible on mobile. Chat messages still rely on hover, which may need a similar update later.
+
+## DEC-009 — User Identity Registry for Switch User
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** "Switch user" generated a new UUID every time, permanently orphaning all trip memberships tied to the old UUID.
+- **Options Considered:**
+  1. **Single user, no switching** — Pros: simple / Cons: blocks multi-user testing on same device
+  2. **User registry in localStorage** — Pros: preserves all identities, simple migration / Cons: registry can grow unbounded
+- **Decision:** Store array of `{ id, name }` in `vacation-bb-users` localStorage key. Switching selects an existing identity; "Add new person" creates a fresh UUID. Active user remains in `vacation-bb-user` for backward compatibility.
+- **Consequences:** Users can switch between identities without losing trip memberships. Registry migrates automatically from existing single-user data on first load.
+- **Related:** DEC-005 (ID-based member identity)
+
 ## DEC-008 — Context Menu Pattern for Edit/Delete Actions
 - **Date:** 2026-03-24
 - **Status:** Accepted
