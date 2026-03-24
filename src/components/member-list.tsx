@@ -1,10 +1,11 @@
 "use client";
 
-import { useAppStore, useTableRows } from "@/lib/store-context";
+import { useAppStore, useMembers } from "@/lib/store-context";
 import { removeMember, setMemberRole, isAdmin } from "@/lib/store";
 import { X, Shield, ShieldOff, UserMinus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export function MemberList({
   tripId,
@@ -14,13 +15,18 @@ export function MemberList({
   onClose: () => void;
 }) {
   const { store, currentUser } = useAppStore();
-  const members = useTableRows("members", "tripId", tripId);
+  const members = useMembers(tripId);
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
 
   const userIsAdmin = currentUser ? isAdmin(store, tripId, currentUser.id) : false;
 
   const sorted = [...members].sort(
-    (a, b) => (a.joinedAt as number) - (b.joinedAt as number)
+    (a, b) => a.joinedAt - b.joinedAt
   );
 
   function handleToggleRole(memberId: string, currentRole: string) {
@@ -49,6 +55,7 @@ export function MemberList({
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <h2 className="font-semibold">Members</h2>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover hover:text-foreground-secondary"
             aria-label="Close member list"
@@ -58,21 +65,21 @@ export function MemberList({
         </div>
 
         <div className="overflow-y-auto p-4">
-          <div className="space-y-2">
+          <ul className="space-y-2">
             {sorted.map((member) => {
               const isCurrentUser = member.userId === currentUser?.id;
               const isConfirming = confirmRemoveId === member.id;
-              const memberRole = member.role as string;
+              const memberRole = member.role;
 
               return (
-                <div
-                  key={member.id as string}
+                <li
+                  key={member.id}
                   className="group flex items-center justify-between rounded-lg border border-border-subtle p-3"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate font-medium text-sm">
-                        {member.name as string}
+                        {member.name}
                       </span>
                       {isCurrentUser && (
                         <span className="text-[10px] text-foreground-tertiary">(you)</span>
@@ -89,7 +96,7 @@ export function MemberList({
                       </span>
                     </div>
                     <p className="text-[10px] text-foreground-tertiary">
-                      Joined {new Date(member.joinedAt as number).toLocaleDateString()}
+                      Joined {new Date(member.joinedAt).toLocaleDateString()}
                     </p>
                   </div>
 
@@ -97,7 +104,7 @@ export function MemberList({
                   {userIsAdmin && !isCurrentUser && !isConfirming && (
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
-                        onClick={() => handleToggleRole(member.id as string, memberRole)}
+                        onClick={() => handleToggleRole(member.id, memberRole)}
                         className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover hover:text-foreground-secondary"
                         title={memberRole === "admin" ? "Remove admin" : "Make admin"}
                         aria-label={memberRole === "admin" ? "Remove admin" : "Make admin"}
@@ -109,7 +116,7 @@ export function MemberList({
                         )}
                       </button>
                       <button
-                        onClick={() => setConfirmRemoveId(member.id as string)}
+                        onClick={() => setConfirmRemoveId(member.id)}
                         className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover hover:text-destructive"
                         title="Remove member"
                         aria-label="Remove member"
@@ -120,26 +127,16 @@ export function MemberList({
                   )}
 
                   {isConfirming && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-foreground-secondary">Remove?</span>
-                      <button
-                        onClick={() => handleRemove(member.id as string)}
-                        className="text-xs font-medium text-destructive hover:underline"
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={() => setConfirmRemoveId(null)}
-                        className="text-xs text-foreground-tertiary hover:underline"
-                      >
-                        No
-                      </button>
-                    </div>
+                    <ConfirmDialog
+                      message="Remove?"
+                      onConfirm={() => handleRemove(member.id)}
+                      onCancel={() => setConfirmRemoveId(null)}
+                    />
                   )}
-                </div>
+                </li>
               );
             })}
-          </div>
+          </ul>
 
           <p className="mt-4 text-center text-xs text-foreground-tertiary">
             {sorted.length} member{sorted.length !== 1 ? "s" : ""}

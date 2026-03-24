@@ -2,7 +2,7 @@
 
 import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { useAppStore, useRow, useTableRows } from "@/lib/store-context";
+import { useAppStore, useRow, useMessages, usePolls, useEvents } from "@/lib/store-context";
 import { useEffect, useState, useMemo } from "react";
 import { updateReadMarker, getReadMarkerTimestamp } from "@/lib/store";
 import {
@@ -36,9 +36,9 @@ export default function TripLayout({
   const [showMembers, setShowMembers] = useState(false);
 
   // Data for unread indicators
-  const messages = useTableRows("messages", "tripId", tripId);
-  const polls = useTableRows("polls", "tripId", tripId);
-  const events = useTableRows("events", "tripId", tripId);
+  const messages = useMessages(tripId);
+  const polls = usePolls(tripId);
+  const events = useEvents(tripId);
 
   useEffect(() => {
     setCurrentTripId(tripId);
@@ -68,26 +68,26 @@ export default function TripLayout({
 
     const chatMarker = getReadMarkerTimestamp(store, tripId, currentUser.id, "chat");
     const hasUnreadChat = messages.some(
-      (m) => (m.timestamp as number) > chatMarker && m.authorId !== currentUser.id
+      (m) => m.timestamp > chatMarker && m.authorId !== currentUser.id
     );
     if (hasUnreadChat) unread.add("chat");
 
     const boardMarker = getReadMarkerTimestamp(store, tripId, currentUser.id, "board");
     const pinnedMessages = messages.filter((m) => m.pinned === 1);
     const hasUnreadBoard = pinnedMessages.some(
-      (m) => (m.timestamp as number) > boardMarker
+      (m) => m.timestamp > boardMarker
     );
     if (hasUnreadBoard) unread.add("board");
 
     const pollsMarker = getReadMarkerTimestamp(store, tripId, currentUser.id, "polls");
     const hasUnreadPolls = polls.some(
-      (p) => (p.createdAt as number) > pollsMarker && p.authorId !== currentUser.id
+      (p) => p.createdAt > pollsMarker && p.authorId !== currentUser.id
     );
     if (hasUnreadPolls) unread.add("polls");
 
     const itineraryMarker = getReadMarkerTimestamp(store, tripId, currentUser.id, "itinerary");
     const hasUnreadItinerary = events.some(
-      (e) => (e.createdAt as number) > itineraryMarker && e.authorId !== currentUser.id
+      (e) => e.createdAt > itineraryMarker && e.authorId !== currentUser.id
     );
     if (hasUnreadItinerary) unread.add("itinerary");
 
@@ -95,7 +95,7 @@ export default function TripLayout({
   }, [store, tripId, currentUser, messages, polls, events]);
 
   const tripName = (trip.name as string) || "Trip";
-  const tripCode = (trip.code as string) || "";
+  const tripCode = (trip.code as string) || ""; // useRow returns Record<string, unknown>
 
   return (
     <div className="flex h-full flex-col">

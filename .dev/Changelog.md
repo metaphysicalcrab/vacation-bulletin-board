@@ -14,6 +14,29 @@ FORMAT:
 - Decisions made (reference DEC-### in Decisions.md if logged)
 -->
 
+## 2026-03-24 — Code Quality: Type Safety, Accessibility, Component Extraction
+**Focus:** Four-phase codebase improvement — hook fixes, type safety, accessibility, and component extraction
+- **Phase 1 — Quick Wins:**
+  - Fixed `useTableRows()` subscribe callback missing `filterField`/`filterValue` deps (stale closure bug)
+  - Fixed `useMemberName()` subscribe callback missing `tripId`/`authorId`/`fallbackName` deps
+  - Added try/catch guard on `JSON.parse` in polls page for malformed options
+  - Added `htmlFor`/`id` associations to all form labels on home page (3 inputs)
+  - Changed member list from `<div>` to semantic `<ul>`/`<li>` markup
+  - Added explicit `Member | null` return type to `getMemberForTrip()`, removed downstream `as` casts
+- **Phase 2 — Type Safety Overhaul:**
+  - Created 6 typed wrapper hooks: `useTrips`, `useMembers`, `useMessages`, `usePolls`, `usePollVotes`, `useEvents`
+  - Updated all 8 consumer files to use typed hooks, eliminating ~60 `as string`/`as number` casts
+- **Phase 3 — Accessibility:**
+  - Created reusable `ConfirmDialog` component, replaced inline confirmations in 4 files
+  - Added descriptive `aria-label` to poll vote buttons (option name + vote count + percentage)
+  - Added focus management to member list panel (auto-focus close button on mount)
+- **Phase 4 — Component Extraction:**
+  - Created shared `SearchBar` component, used in chat page
+  - Extracted `MessageItem` and `ChatInput` from chat page (339→120 lines)
+  - Extracted `PollCard` and `PollForm` from polls page (332→105 lines)
+  - Extracted `EventCard` and `EventForm` from itinerary page (413→210 lines)
+- **New files:** `src/components/confirm-dialog.tsx`, `src/components/search-bar.tsx`, `src/components/chat/message-item.tsx`, `src/components/chat/chat-input.tsx`, `src/components/polls/poll-card.tsx`, `src/components/polls/poll-form.tsx`, `src/components/itinerary/event-card.tsx`, `src/components/itinerary/event-form.tsx`
+
 ## 2026-03-24 — Major: Multi-User Sync, CRUD, Polish
 **Focus:** Fix broken multi-user model, add real-time sync, full CRUD on all entities, and UX polish
 - **Phase 1 — Foundation:**

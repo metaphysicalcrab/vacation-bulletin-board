@@ -38,7 +38,44 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 ### Component: MemberList
 - **Purpose:** Slide-out panel showing trip members with admin actions (promote/demote, remove)
 - **Location:** `/src/components/member-list.tsx`
-- **Dependencies:** `useTableRows`, `isAdmin`, `setMemberRole`, `removeMember`
+- **Dependencies:** `useMembers`, `isAdmin`, `setMemberRole`, `removeMember`, `ConfirmDialog`
+
+### Component: ConfirmDialog
+- **Purpose:** Reusable inline confirmation prompt (message + Yes/No buttons)
+- **Location:** `/src/components/confirm-dialog.tsx`
+- **Used by:** Chat page, Polls page, Itinerary page, MemberList
+
+### Component: SearchBar
+- **Purpose:** Reusable search input bar with close button
+- **Location:** `/src/components/search-bar.tsx`
+- **Used by:** Chat page
+
+### Component: MessageItem
+- **Purpose:** Single chat message with bubble, metadata, edit/delete/pin actions
+- **Location:** `/src/components/chat/message-item.tsx`
+- **Dependencies:** `AuthorName`, `ConfirmDialog`, `formatTime`
+
+### Component: ChatInput
+- **Purpose:** Bottom chat input form with send/search buttons
+- **Location:** `/src/components/chat/chat-input.tsx`
+
+### Component: PollCard
+- **Purpose:** Single poll display with vote buttons, progress bars, manage actions
+- **Location:** `/src/components/polls/poll-card.tsx`
+- **Dependencies:** `AuthorName`, `ConfirmDialog`, `formatTime`
+
+### Component: PollForm
+- **Purpose:** Create poll form with dynamic options list
+- **Location:** `/src/components/polls/poll-form.tsx`
+
+### Component: EventCard
+- **Purpose:** Single itinerary event display with time, location, edit/delete
+- **Location:** `/src/components/itinerary/event-card.tsx`
+- **Dependencies:** `AuthorName`, `ConfirmDialog`, `formatEventTime`
+
+### Component: EventForm
+- **Purpose:** Create/edit event form with date/time pickers
+- **Location:** `/src/components/itinerary/event-form.tsx`
 
 ### Component: Sync Server
 - **Purpose:** WebSocket relay for multi-device TinyBase sync
@@ -60,22 +97,22 @@ Voyage Board is a local-first vacation coordination app. Groups create or join a
 ### Component: Chat Page
 - **Purpose:** Real-time-style message board with pin/unpin functionality
 - **Location:** `/src/app/trip/[tripId]/page.tsx`
-- **Dependencies:** `useTableRows` (messages), `addMessage`, `togglePin`
+- **Dependencies:** `useMessages`, `addMessage`, `togglePin`, `MessageItem`, `ChatInput`, `SearchBar`
 
 ### Component: Bulletin Board Page
 - **Purpose:** Gallery view of pinned messages only
 - **Location:** `/src/app/trip/[tripId]/board/page.tsx`
-- **Dependencies:** `useTableRows` (messages filtered by pinned)
+- **Dependencies:** `useMessages` (filtered by pinned)
 
 ### Component: Polls Page
 - **Purpose:** Create polls, vote on options, view results with progress bars
 - **Location:** `/src/app/trip/[tripId]/polls/page.tsx`
-- **Dependencies:** `useTableRows` (polls, pollVotes), `addPoll`, `votePoll`
+- **Dependencies:** `usePolls`, `usePollVotes`, `PollCard`, `PollForm`
 
 ### Component: Itinerary Page
 - **Purpose:** Create events with date/time/location, view grouped by day
 - **Location:** `/src/app/trip/[tripId]/itinerary/page.tsx`
-- **Dependencies:** `useTableRows` (events), `addEvent`
+- **Dependencies:** `useEvents`, `EventCard`, `EventForm`
 
 ### Component: UI Primitives (Button, Input, Textarea)
 - **Purpose:** Styled base components with variant support (CVA)
@@ -90,7 +127,7 @@ localStorage (JSON)
 TinyBase Store (in-memory)
     ↕ addTableListener / addRowListener
 React Context (StoreProvider)
-    ↕ useAppStore() / useTableRows() / useRow()
+    ↕ useAppStore() / useMessages() / usePolls() / useEvents() / etc.
 Page Components
     → call store helper functions (addMessage, addPoll, etc.)
     → TinyBase store updates → listener fires → useSyncExternalStore re-renders

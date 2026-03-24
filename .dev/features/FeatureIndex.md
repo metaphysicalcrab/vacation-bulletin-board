@@ -11,10 +11,10 @@
 | Name | One-liner | Location |
 |------|-----------|----------|
 | Trip Management | Create trips, join via code, list user's trips | `/src/app/page.tsx` |
-| Chat | Send messages, pin/unpin, relative timestamps | `/src/app/trip/[tripId]/page.tsx` |
+| Chat | Send messages, pin/unpin, relative timestamps | `/src/app/trip/[tripId]/page.tsx`, `/src/components/chat/` |
 | Bulletin Board | View-only gallery of pinned messages | `/src/app/trip/[tripId]/board/page.tsx` |
-| Polls | Create polls with 2-6 options, vote, view results | `/src/app/trip/[tripId]/polls/page.tsx` |
-| Itinerary | Create events with date/time/location, grouped by day | `/src/app/trip/[tripId]/itinerary/page.tsx` |
+| Polls | Create polls with 2-6 options, vote, view results | `/src/app/trip/[tripId]/polls/page.tsx`, `/src/components/polls/` |
+| Itinerary | Create events with date/time/location, grouped by day | `/src/app/trip/[tripId]/itinerary/page.tsx`, `/src/components/itinerary/` |
 
 ## Systems
 
@@ -38,3 +38,6 @@
 | `formatTime()` | Relative timestamp formatting ("5m ago", "2h ago") | `/src/lib/utils.ts` |
 | `formatEventTime()` | Long date/time formatting for itinerary events | `/src/lib/utils.ts` |
 | Button / Input / Textarea | Styled UI primitives with CVA variants | `/src/components/ui/` |
+| ConfirmDialog | Reusable inline delete/remove confirmation | `/src/components/confirm-dialog.tsx` |
+| SearchBar | Reusable search input with close button | `/src/components/search-bar.tsx` |
+| Typed Table Hooks | `useMessages`, `usePolls`, `useEvents`, etc. | `/src/lib/store-context.tsx` |

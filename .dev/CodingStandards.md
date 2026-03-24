@@ -35,10 +35,16 @@
 - **Implementation:** Export pure functions from `store.ts` that accept a `Store` instance as the first argument. Each function generates a UUID, calls `store.setRow()`, and returns the new row ID. This keeps mutation logic centralized and testable outside React.
 - **Example location:** `/src/lib/store.ts` — `addMessage()`, `addPoll()`, `votePoll()`, `createTrip()`
 
-### Pattern: Reactive Table Hooks
+### Pattern: Typed Table Hooks
 - **Use when:** Rendering data from a TinyBase table in a component
-- **Implementation:** Use `useTableRows(tableName, filterField?, filterValue?)` for filtered lists or `useRow(tableName, rowId)` for single records. Both use `useSyncExternalStore` with TinyBase listeners for efficient re-rendering. Returns are JSON-parsed each render (serialization is the snapshot).
-- **Example location:** `/src/lib/store-context.tsx` — `useTableRows()`, `useRow()`
+- **Implementation:** Use typed hooks (`useMessages(tripId)`, `usePolls(tripId)`, `useEvents(tripId)`, `useMembers(tripId)`, `usePollVotes()`, `useTrips()`) instead of raw `useTableRows()`. These wrap `useTableRows` with proper return types, eliminating `as string`/`as number` casts in components. For single records, use `useRow(tableName, rowId)`.
+- **Example location:** `/src/lib/store-context.tsx`
+- **Anti-pattern:** Don't use `useTableRows()` directly in page components — use a typed hook instead.
+
+### Pattern: Reusable ConfirmDialog
+- **Use when:** Showing an inline delete/remove confirmation
+- **Implementation:** Use `<ConfirmDialog message="..." onConfirm={...} onCancel={...} />` instead of inline Yes/No button markup.
+- **Example location:** `/src/components/confirm-dialog.tsx`
 
 ### Pattern: Inline Create Form + List
 - **Use when:** Building a feature page (polls, itinerary, chat)
@@ -59,7 +65,7 @@
 ## File & Folder Conventions
 
 - **Pages:** `/src/app/` using Next.js App Router conventions. Dynamic routes use `[param]` folders.
-- **Components:** `/src/components/ui/` for styled primitives. Feature-specific components live inline in page files for now.
+- **Components:** `/src/components/ui/` for styled primitives. `/src/components/chat/`, `/src/components/polls/`, `/src/components/itinerary/` for feature-specific extracted components. Shared components (`confirm-dialog.tsx`, `search-bar.tsx`, `author-name.tsx`, `member-list.tsx`) at `/src/components/`.
 - **Logic:** `/src/lib/` for store, context, and utilities. `store.ts` for schema + mutations, `store-context.tsx` for React integration, `utils.ts` for pure helpers.
 - **No barrel exports** — Import directly from file paths.
 - **All components are client components** — `"use client"` directive at top of every component file (required because TinyBase and React hooks are client-only).

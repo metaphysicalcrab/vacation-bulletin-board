@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useAppStore, useTableRows } from "@/lib/store-context";
+import { useAppStore, useMessages } from "@/lib/store-context";
 import { togglePin } from "@/lib/store";
 import { formatTime } from "@/lib/utils";
 import { Pin, PinOff, MessageCircle } from "lucide-react";
@@ -13,10 +13,10 @@ export default function BoardPage() {
   const tripId = params.tripId as string;
   const { store } = useAppStore();
 
-  const messages = useTableRows("messages", "tripId", tripId);
+  const messages = useMessages(tripId);
   const pinned = messages
     .filter((m) => m.pinned === 1)
-    .sort((a, b) => (b.timestamp as number) - (a.timestamp as number));
+    .sort((a, b) => b.timestamp - a.timestamp);
 
   function handleUnpin(messageId: string) {
     togglePin(store, messageId);
@@ -53,23 +53,23 @@ export default function BoardPage() {
           <div className="space-y-3">
             {pinned.map((msg) => (
               <div
-                key={msg.id as string}
+                key={msg.id}
                 className="rounded-xl border border-border-accent bg-surface p-4"
               >
                 <div className="mb-2 flex items-start justify-between">
                   <div>
                     <AuthorName
                       tripId={tripId}
-                      authorId={msg.authorId as string}
-                      fallbackName={msg.authorName as string}
+                      authorId={msg.authorId}
+                      fallbackName={msg.authorName}
                       className="text-sm font-medium"
                     />
                     <span className="ml-2 text-xs text-foreground-tertiary">
-                      {formatTime(msg.timestamp as number)}
+                      {formatTime(msg.timestamp)}
                     </span>
                   </div>
                   <button
-                    onClick={() => handleUnpin(msg.id as string)}
+                    onClick={() => handleUnpin(msg.id)}
                     className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground-tertiary transition-colors hover:bg-surface-hover hover:text-foreground-secondary"
                   >
                     <PinOff className="h-3.5 w-3.5" />
@@ -77,7 +77,7 @@ export default function BoardPage() {
                   </button>
                 </div>
                 <p className="text-sm leading-relaxed text-foreground">
-                  {msg.text as string}
+                  {msg.text}
                 </p>
               </div>
             ))}
