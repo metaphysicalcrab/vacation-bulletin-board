@@ -258,7 +258,7 @@ export default function HomePage() {
                     onClick={() => {
                       deleteCurrentUser();
                       setConfirmDeleteAccount(false);
-                      setView("name");
+                      setView("select");
                     }}
                   >
                     Delete
