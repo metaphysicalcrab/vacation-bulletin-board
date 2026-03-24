@@ -91,10 +91,11 @@ export default function HomePage() {
           </div>
           <form onSubmit={handleSetName} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label htmlFor="user-name" className="mb-1 block text-sm font-medium">
                 What&apos;s your name?
               </label>
               <Input
+                id="user-name"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="Enter your name"
@@ -187,10 +188,11 @@ export default function HomePage() {
         {view === "create" && (
           <form onSubmit={handleCreateTrip} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label htmlFor="trip-name" className="mb-1 block text-sm font-medium">
                 Trip Name
               </label>
               <Input
+                id="trip-name"
                 value={tripName}
                 onChange={(e) => setTripName(e.target.value)}
                 placeholder='e.g. "Caribbean Cruise 2026"'
@@ -216,10 +218,11 @@ export default function HomePage() {
         {view === "join" && (
           <form onSubmit={handleJoinTrip} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium">
+              <label htmlFor="trip-code" className="mb-1 block text-sm font-medium">
                 Trip Code
               </label>
               <Input
+                id="trip-code"
                 value={joinCode}
                 onChange={(e) => {
                   setJoinCode(e.target.value.toUpperCase());

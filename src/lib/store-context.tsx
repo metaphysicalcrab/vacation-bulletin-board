@@ -11,7 +11,16 @@ import React, {
 import { MergeableStore } from "tinybase";
 import { createBroadcastChannelSynchronizer } from "tinybase/synchronizers/synchronizer-broadcast-channel";
 import { createWsSynchronizer } from "tinybase/synchronizers/synchronizer-ws-client";
-import { createAppStore, resolveAuthorName } from "./store";
+import {
+  createAppStore,
+  resolveAuthorName,
+  type Trip,
+  type Member,
+  type Message,
+  type Poll,
+  type PollVote,
+  type ItineraryEvent,
+} from "./store";
 
 type ConnectionStatus = "disconnected" | "connecting" | "connected";
 
@@ -245,7 +254,7 @@ export function useTableRows(
         store.delListener(listenerId);
       };
     },
-    [store, tableName]
+    [store, tableName, filterField, filterValue]
   );
 
   const getSnapshot = useCallback(() => {
@@ -261,6 +270,31 @@ export function useTableRows(
 
   const serialized = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return JSON.parse(serialized) as Record<string, unknown>[];
+}
+
+// Typed table hooks
+export function useTrips(): Trip[] {
+  return useTableRows("trips") as unknown as Trip[];
+}
+
+export function useMembers(tripId: string): Member[] {
+  return useTableRows("members", "tripId", tripId) as unknown as Member[];
+}
+
+export function useMessages(tripId: string): Message[] {
+  return useTableRows("messages", "tripId", tripId) as unknown as Message[];
+}
+
+export function usePolls(tripId: string): Poll[] {
+  return useTableRows("polls", "tripId", tripId) as unknown as Poll[];
+}
+
+export function usePollVotes(): PollVote[] {
+  return useTableRows("pollVotes") as unknown as PollVote[];
+}
+
+export function useEvents(tripId: string): ItineraryEvent[] {
+  return useTableRows("events", "tripId", tripId) as unknown as ItineraryEvent[];
 }
 
 // Hook to reactively get a single row
@@ -300,7 +334,7 @@ export function useMemberName(tripId: string, authorId: string, fallbackName?: s
         store.delListener(listenerId);
       };
     },
-    [store]
+    [store, tripId, authorId, fallbackName]
   );
 
   const getSnapshot = useCallback(() => {

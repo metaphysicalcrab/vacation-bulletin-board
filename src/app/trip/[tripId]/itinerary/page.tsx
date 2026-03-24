@@ -2,52 +2,43 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useAppStore, useTableRows } from "@/lib/store-context";
+import { useAppStore, useEvents } from "@/lib/store-context";
 import { addEvent, updateEvent, deleteEvent, isAdmin } from "@/lib/store";
-import { formatEventTime, cn } from "@/lib/utils";
+import type { ItineraryEvent } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, X, Calendar, MapPin, Clock, Pencil, Trash2, Search } from "lucide-react";
-import { AuthorName } from "@/components/author-name";
+import { Plus, X, Calendar, Search } from "lucide-react";
+import { EventForm } from "@/components/itinerary/event-form";
+import { EventCard } from "@/components/itinerary/event-card";
 
 export default function ItineraryPage() {
   const params = useParams();
   const tripId = params.tripId as string;
   const { store, currentUser } = useAppStore();
   const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [location, setLocation] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<ItineraryEvent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
 
-  const events = useTableRows("events", "tripId", tripId);
+  const events = useEvents(tripId);
   const sortedEvents = [...events].sort(
-    (a, b) => (a.startTime as number) - (b.startTime as number)
+    (a, b) => a.startTime - b.startTime
   );
 
   const filteredEvents = searchQuery
     ? sortedEvents.filter(
         (e) =>
-          (e.title as string).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (e.description as string).toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (e.location as string).toLowerCase().includes(searchQuery.toLowerCase())
+          e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          e.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          e.location.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : sortedEvents;
 
   const userIsAdmin = currentUser ? isAdmin(store, tripId, currentUser.id) : false;
 
   // Group events by day
-  const groupedEvents: Record<string, typeof filteredEvents> = {};
+  const groupedEvents: Record<string, ItineraryEvent[]> = {};
   for (const event of filteredEvents) {
-    const day = new Date(event.startTime as number).toLocaleDateString(
+    const day = new Date(event.startTime).toLocaleDateString(
       undefined,
       { weekday: "long", month: "long", day: "numeric" }
     );
@@ -55,81 +46,54 @@ export default function ItineraryPage() {
     groupedEvents[day].push(event);
   }
 
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!title.trim() || !startDate || !startTime || !currentUser) return;
-
-    const start = new Date(`${startDate}T${startTime}`).getTime();
-    const end =
-      endDate && endTime
-        ? new Date(`${endDate}T${endTime}`).getTime()
-        : start + 3600000; // default 1 hour
-
+  function handleCreate(data: {
+    title: string;
+    description: string;
+    location: string;
+    startTime: number;
+    endTime: number;
+  }) {
+    if (!currentUser) return;
     addEvent(
       store,
       tripId,
       currentUser.id,
       currentUser.name,
-      title.trim(),
-      description.trim(),
-      start,
-      end,
-      location.trim()
+      data.title,
+      data.description,
+      data.startTime,
+      data.endTime,
+      data.location
     );
-
-    resetForm();
-  }
-
-  function resetForm() {
-    setTitle("");
-    setDescription("");
-    setLocation("");
-    setStartDate("");
-    setStartTime("");
-    setEndDate("");
-    setEndTime("");
     setShowCreate(false);
-    setEditingId(null);
+    setEditingEvent(null);
   }
 
-  function handleStartEdit(event: Record<string, unknown>) {
-    setEditingId(event.id as string);
-    setTitle(event.title as string);
-    setDescription(event.description as string);
-    setLocation(event.location as string);
-    const start = new Date(event.startTime as number);
-    const end = new Date(event.endTime as number);
-    setStartDate(start.toISOString().split("T")[0]);
-    setStartTime(start.toTimeString().slice(0, 5));
-    setEndDate(end.toISOString().split("T")[0]);
-    setEndTime(end.toTimeString().slice(0, 5));
+  function handleSaveEdit(data: {
+    title: string;
+    description: string;
+    location: string;
+    startTime: number;
+    endTime: number;
+  }) {
+    if (!editingEvent) return;
+    updateEvent(store, editingEvent.id, data);
+    setShowCreate(false);
+    setEditingEvent(null);
+  }
+
+  function handleStartEdit(event: ItineraryEvent) {
+    setEditingEvent(event);
     setShowCreate(true);
-  }
-
-  function handleSaveEdit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editingId || !title.trim() || !startDate || !startTime) return;
-
-    const start = new Date(`${startDate}T${startTime}`).getTime();
-    const end =
-      endDate && endTime
-        ? new Date(`${endDate}T${endTime}`).getTime()
-        : start + 3600000;
-
-    updateEvent(store, editingId, {
-      title: title.trim(),
-      description: description.trim(),
-      startTime: start,
-      endTime: end,
-      location: location.trim(),
-    });
-
-    resetForm();
   }
 
   function handleDelete(eventId: string) {
     deleteEvent(store, eventId);
-    setConfirmDeleteId(null);
+  }
+
+  function resetForm() {
+    setShowCreate(false);
+    setEditingEvent(null);
   }
 
   const now = Date.now();
@@ -195,84 +159,11 @@ export default function ItineraryPage() {
 
         {/* Create/Edit Event Form */}
         {showCreate && (
-          <form
-            onSubmit={editingId ? handleSaveEdit : handleCreate}
-            className="mb-6 space-y-3 rounded-xl border border-border bg-surface p-4"
-          >
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-              autoFocus
-              maxLength={100}
-            />
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (optional)"
-              rows={2}
-              maxLength={500}
-            />
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Location (optional)"
-              maxLength={100}
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="mb-1 block text-xs text-foreground-secondary">
-                  Start Date
-                </label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (!endDate) setEndDate(e.target.value);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-foreground-secondary">
-                  Start Time
-                </label>
-                <Input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-foreground-secondary">
-                  End Date
-                </label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-foreground-secondary">
-                  End Time
-                </label>
-                <Input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
-              </div>
-            </div>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!title.trim() || !startDate || !startTime}
-              className="w-full"
-            >
-              {editingId ? "Save Changes" : "Add to Itinerary"}
-            </Button>
-          </form>
+          <EventForm
+            onSubmit={editingEvent ? handleSaveEdit : handleCreate}
+            initialEvent={editingEvent ?? undefined}
+            isEditing={!!editingEvent}
+          />
         )}
 
         {/* Events Timeline */}
@@ -311,97 +202,18 @@ export default function ItineraryPage() {
                 {day}
               </h3>
               <div className="space-y-2">
-                {dayEvents.map((event) => {
-                  const isPast = (event.endTime as number) < now;
-                  const isOwn = event.authorId === currentUser?.id;
-                  const canModify = isOwn || userIsAdmin;
-                  const isConfirmingDelete = confirmDeleteId === event.id;
-
-                  return (
-                    <div
-                      key={event.id as string}
-                      className={cn(
-                        "group rounded-xl border bg-surface p-4",
-                        isPast
-                          ? "border-border-subtle opacity-60"
-                          : "border-border"
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <h4 className="font-medium">{event.title as string}</h4>
-                        {canModify && !isConfirmingDelete && (
-                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            {isOwn && (
-                              <button
-                                onClick={() => handleStartEdit(event)}
-                                className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover hover:text-foreground-secondary"
-                                aria-label="Edit event"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setConfirmDeleteId(event.id as string)}
-                              className="rounded p-1 text-foreground-tertiary hover:bg-surface-hover hover:text-destructive"
-                              aria-label="Delete event"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        )}
-                        {isConfirmingDelete && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-foreground-secondary">Delete?</span>
-                            <button
-                              onClick={() => handleDelete(event.id as string)}
-                              className="text-xs font-medium text-destructive hover:underline"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="text-xs text-foreground-tertiary hover:underline"
-                            >
-                              No
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {(event.description as string) ? (
-                        <p className="mt-1 text-sm text-foreground-secondary">
-                          {event.description as string}
-                        </p>
-                      ) : null}
-                      <div className="mt-2 flex flex-wrap gap-3 text-xs text-foreground-secondary">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatEventTime(event.startTime as number)}
-                          {" - "}
-                          {new Date(
-                            event.endTime as number
-                          ).toLocaleTimeString(undefined, {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                        {(event.location as string) ? (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {event.location as string}
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 text-[10px] text-foreground-tertiary">
-                        Added by{" "}
-                        <AuthorName
-                          tripId={tripId}
-                          authorId={event.authorId as string}
-                          fallbackName={event.authorName as string}
-                        />
-                      </p>
-                    </div>
-                  );
-                })}
+                {dayEvents.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    tripId={tripId}
+                    isPast={event.endTime < now}
+                    isOwn={event.authorId === currentUser?.id}
+                    canModify={event.authorId === currentUser?.id || userIsAdmin}
+                    onEdit={handleStartEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </div>
             </div>
           ))}

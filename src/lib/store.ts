@@ -139,10 +139,10 @@ export function getMemberForTrip(
   store: MergeableStore,
   tripId: string,
   userId: string
-): Record<string, unknown> | null {
+): Member | null {
   const members = store.getTable("members");
   for (const row of Object.values(members)) {
-    if (row.tripId === tripId && row.userId === userId) return row;
+    if (row.tripId === tripId && row.userId === userId) return row as unknown as Member;
   }
   return null;
 }
@@ -154,8 +154,8 @@ export function resolveAuthorName(
   fallbackName?: string
 ): string {
   const member = getMemberForTrip(store, tripId, authorId);
-  if (member) return member.name as string;
-  return (fallbackName as string) || "Unknown";
+  if (member) return member.name;
+  return fallbackName || "Unknown";
 }
 
 export function isAdmin(
@@ -174,7 +174,7 @@ export function getMemberRole(
 ): "admin" | "member" | null {
   const member = getMemberForTrip(store, tripId, userId);
   if (!member) return null;
-  return member.role as "admin" | "member";
+  return member.role;
 }
 
 // --- Trip helpers ---
