@@ -14,6 +14,12 @@ FORMAT:
 - Decisions made (reference DEC-### in Decisions.md if logged)
 -->
 
+## 2026-03-24 — Fix: Bottom Menu Bar Not Pinned to Screen Bottom
+**Focus:** Bug fix — menu bar positioning broken by missing height on wrapper div
+- Root cause: `<div id="main-content">` in root layout was missing `h-full`, breaking the height chain from `html` → `body` → content
+- The wrapper was added in the multi-device sync PR for skip-to-content accessibility, but forgot `h-full`
+- Fix: Added `className="h-full"` to the `#main-content` div in `src/app/layout.tsx`
+
 ## 2026-03-24 — Code Quality: Type Safety, Accessibility, Component Extraction
 **Focus:** Four-phase codebase improvement — hook fixes, type safety, accessibility, and component extraction
 - **Phase 1 — Quick Wins:**

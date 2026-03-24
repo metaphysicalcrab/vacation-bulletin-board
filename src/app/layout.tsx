@@ -33,7 +33,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <StoreProvider>
-          <div id="main-content">{children}</div>
+          <div id="main-content" className="h-full">{children}</div>
         </StoreProvider>
       </body>
     </html>
