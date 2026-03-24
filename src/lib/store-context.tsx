@@ -35,6 +35,7 @@ type StoreContextType = {
   setCurrentUser: (user: UserIdentity | null) => void;
   setCurrentTripId: (tripId: string | null) => void;
   renameCurrentUser: (newName: string) => void;
+  deleteCurrentUser: () => void;
 };
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -182,6 +183,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [currentUser, store]
   );
 
+  // Delete current user: remove from registry, remove all member records, clear active user
+  const deleteCurrentUser = useCallback(() => {
+    if (!currentUser) return;
+
+    // Remove all member records for this user
+    const members = store.getTable("members");
+    for (const [rowId, member] of Object.entries(members)) {
+      if (member.userId === currentUser.id) {
+        store.delRow("members", rowId);
+      }
+    }
+
+    // Remove from registry
+    setKnownUsers((prev) => {
+      const newList = prev.filter((u) => u.id !== currentUser.id);
+      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(newList));
+      return newList;
+    });
+
+    // Clear active user
+    setCurrentUserRaw(null);
+    localStorage.removeItem(STORAGE_KEY_USER);
+    setCurrentTripId(null);
+  }, [currentUser, store]);
+
   // BroadcastChannel sync for same-browser tab sync
   useEffect(() => {
     if (!hydrated) return;
@@ -286,6 +312,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setCurrentUser,
         setCurrentTripId,
         renameCurrentUser,
+        deleteCurrentUser,
       }}
     >
       {children}

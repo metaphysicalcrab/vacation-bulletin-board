@@ -10,7 +10,9 @@
 
 | Name | One-liner | Location |
 |------|-----------|----------|
-| Trip Management | Create trips, join via code, list user's trips | `/src/app/page.tsx` |
+| Trip Management | Create trips, join via code, list user's trips (filtered by membership) | `/src/app/page.tsx` |
+| User Management | Sign up, switch identities (preserved registry), edit name, user avatars | `/src/app/page.tsx`, `/src/lib/store-context.tsx` |
+| Member Management | View members, admin actions (tap-to-expand), leave trip | `/src/components/member-list.tsx` |
 | Chat | Send messages, pin/unpin, relative timestamps | `/src/app/trip/[tripId]/page.tsx`, `/src/components/chat/` |
 | Bulletin Board | View-only gallery of pinned messages | `/src/app/trip/[tripId]/board/page.tsx` |
 | Polls | Create polls with 2-6 options, vote, view results | `/src/app/trip/[tripId]/polls/page.tsx`, `/src/components/polls/` |
@@ -40,4 +42,5 @@
 | Button / Input / Textarea | Styled UI primitives with CVA variants | `/src/components/ui/` |
 | ConfirmDialog | Reusable inline delete/remove confirmation | `/src/components/confirm-dialog.tsx` |
 | SearchBar | Reusable search input with close button | `/src/components/search-bar.tsx` |
+| UserAvatar | Deterministic colored circle with initial, based on userId hash | `/src/components/user-avatar.tsx` |
 | Typed Table Hooks | `useMessages`, `usePolls`, `useEvents`, etc. | `/src/lib/store-context.tsx` |

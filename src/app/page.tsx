@@ -12,7 +12,7 @@ import { UserAvatar } from "@/components/user-avatar";
 
 export default function HomePage() {
   const router = useRouter();
-  const { store, currentUser, knownUsers, setCurrentUser, setCurrentTripId, renameCurrentUser } =
+  const { store, currentUser, knownUsers, setCurrentUser, setCurrentTripId, renameCurrentUser, deleteCurrentUser } =
     useAppStore();
   const [view, setView] = useState<"home" | "create" | "join" | "name" | "select">(
     currentUser ? "home" : "name"
@@ -23,6 +23,7 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
 
   function handleSetName(e: React.FormEvent) {
     e.preventDefault();
@@ -245,6 +246,40 @@ export default function HomePage() {
             >
               Switch user
             </button>
+            {confirmDeleteAccount ? (
+              <div className="rounded-lg border border-destructive bg-surface p-3 text-center">
+                <p className="text-sm text-foreground-secondary mb-2">
+                  Delete your account? This removes you from all trips and cannot be undone.
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      deleteCurrentUser();
+                      setConfirmDeleteAccount(false);
+                      setView("name");
+                    }}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmDeleteAccount(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteAccount(true)}
+                className="w-full text-center text-xs text-foreground-tertiary hover:text-destructive"
+              >
+                Delete account
+              </button>
+            )}
           </div>
         )}
 
