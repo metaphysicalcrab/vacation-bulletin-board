@@ -227,6 +227,25 @@ export function setMemberRole(
   store.setCell("members", memberId, "role", role);
 }
 
+export function isLastAdmin(
+  store: MergeableStore,
+  tripId: string
+): boolean {
+  const members = store.getTable("members");
+  const admins = Object.values(members).filter(
+    (m) => m.tripId === tripId && m.role === "admin"
+  );
+  return admins.length <= 1;
+}
+
+export function getMemberCount(
+  store: MergeableStore,
+  tripId: string
+): number {
+  const members = store.getTable("members");
+  return Object.values(members).filter((m) => m.tripId === tripId).length;
+}
+
 export function updateMemberName(
   store: MergeableStore,
   memberId: string,

@@ -102,8 +102,10 @@ export default function ChatPage() {
           </div>
         )}
         <div className="space-y-3">
-          {filtered.map((msg) => {
+          {filtered.map((msg, idx) => {
             const isOwn = msg.authorId === currentUser?.id;
+            const prevMsg = idx > 0 ? filtered[idx - 1] : null;
+            const isFirstInGroup = !prevMsg || prevMsg.authorId !== msg.authorId;
 
             return (
               <MessageItem
@@ -111,6 +113,7 @@ export default function ChatPage() {
                 msg={msg}
                 tripId={tripId}
                 isOwn={isOwn}
+                isFirstInGroup={isFirstInGroup}
                 canEdit={isOwn}
                 canDelete={isOwn || userIsAdmin}
                 onEdit={handleEdit}

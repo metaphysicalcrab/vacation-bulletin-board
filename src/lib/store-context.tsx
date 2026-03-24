@@ -24,19 +24,24 @@ import {
 
 type ConnectionStatus = "disconnected" | "connecting" | "connected";
 
+type UserIdentity = { id: string; name: string };
+
 type StoreContextType = {
   store: MergeableStore;
-  currentUser: { id: string; name: string } | null;
+  currentUser: UserIdentity | null;
+  knownUsers: UserIdentity[];
   currentTripId: string | null;
   connectionStatus: ConnectionStatus;
-  setCurrentUser: (user: { id: string; name: string } | null) => void;
+  setCurrentUser: (user: UserIdentity | null) => void;
   setCurrentTripId: (tripId: string | null) => void;
+  renameCurrentUser: (newName: string) => void;
 };
 
 const StoreContext = createContext<StoreContextType | null>(null);
 
 const STORAGE_KEY_STORE = "vacation-bb-store";
 const STORAGE_KEY_USER = "vacation-bb-user";
+const STORAGE_KEY_USERS = "vacation-bb-users";
 
 function migrateStoreData(store: MergeableStore, currentUser: { id: string; name: string } | null) {
   // Migrate members without userId field — backfill from current user by name match
@@ -52,17 +57,15 @@ function migrateStoreData(store: MergeableStore, currentUser: { id: string; name
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [store] = useState(() => createAppStore());
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [currentUser, setCurrentUserRaw] = useState<UserIdentity | null>(null);
+  const [knownUsers, setKnownUsers] = useState<UserIdentity[]>([]);
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("disconnected");
 
   // Load persisted data on mount
   useEffect(() => {
-    let savedUser: { id: string; name: string } | null = null;
+    let savedUser: UserIdentity | null = null;
     try {
       const savedStore = localStorage.getItem(STORAGE_KEY_STORE);
       if (savedStore) {
@@ -77,7 +80,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const savedUserStr = localStorage.getItem(STORAGE_KEY_USER);
       if (savedUserStr) {
         savedUser = JSON.parse(savedUserStr);
-        setCurrentUser(savedUser);
+        setCurrentUserRaw(savedUser);
+      }
+
+      // Load or migrate user registry
+      const savedUsersStr = localStorage.getItem(STORAGE_KEY_USERS);
+      if (savedUsersStr) {
+        setKnownUsers(JSON.parse(savedUsersStr));
+      } else if (savedUser) {
+        // Migrate: seed registry from existing single user
+        const registry = [savedUser];
+        setKnownUsers(registry);
+        localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(registry));
       }
     } catch {
       // ignore parse errors
@@ -121,6 +135,52 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem(STORAGE_KEY_USER);
     }
   }, [currentUser, hydrated]);
+
+  // Wrap setCurrentUser to also update the user registry
+  const setCurrentUser = useCallback(
+    (user: UserIdentity | null) => {
+      setCurrentUserRaw(user);
+      if (user) {
+        setKnownUsers((prev) => {
+          const exists = prev.some((u) => u.id === user.id);
+          const updated = exists
+            ? prev.map((u) => (u.id === user.id ? user : u))
+            : [...prev, user];
+          localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(updated));
+          return updated;
+        });
+      }
+    },
+    []
+  );
+
+  // Rename current user across localStorage, registry, and all member records
+  const renameCurrentUser = useCallback(
+    (newName: string) => {
+      if (!currentUser) return;
+      const updated = { ...currentUser, name: newName };
+      setCurrentUserRaw(updated);
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(updated));
+
+      // Update registry
+      setKnownUsers((prev) => {
+        const newList = prev.map((u) =>
+          u.id === currentUser.id ? { ...u, name: newName } : u
+        );
+        localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(newList));
+        return newList;
+      });
+
+      // Update all member records for this user
+      const members = store.getTable("members");
+      for (const [rowId, member] of Object.entries(members)) {
+        if (member.userId === currentUser.id) {
+          store.setCell("members", rowId, "name", newName);
+        }
+      }
+    },
+    [currentUser, store]
+  );
 
   // BroadcastChannel sync for same-browser tab sync
   useEffect(() => {
@@ -220,10 +280,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       value={{
         store,
         currentUser,
+        knownUsers,
         currentTripId,
         connectionStatus,
         setCurrentUser,
         setCurrentTripId,
+        renameCurrentUser,
       }}
     >
       {children}
