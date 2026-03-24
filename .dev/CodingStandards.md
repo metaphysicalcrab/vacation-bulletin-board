@@ -1,6 +1,6 @@
 # Coding Standards — Vacation Bulletin Board
 
-> **Last updated:** 2026-03-23
+> **Last updated:** 2026-03-24
 > **Extends:** Universal standards in `.dev/universal/CodingStandards.md`
 > Project-specific overrides and additions below. Universal standards apply unless overridden here.
 >
@@ -9,71 +9,61 @@
 
 ## Project Context
 
-<!-- Claude Code: Fill these in during first real development session -->
+**Application type:** Web application (local-first vacation coordination)
 
-<!-- What type of application is this? (Web API, SPA, CLI, game, library, etc.) -->
-**Application type:** Web application (bulletin board)
-
-<!-- What's the primary language and framework? -->
 **Primary language:** TypeScript
 **Framework:** Next.js 15 (App Router) / React 19
 
-<!-- What ORM or data access approach? (EF Core, Prisma, Drizzle, raw SQL, etc.) -->
-**Data access:** TinyBase (local data store)
+**Data access:** TinyBase v8 (local data store with schema validation, persisted to localStorage)
 
-<!-- What test framework and approach? (xUnit, Vitest, Jest, Godot testing, etc.) -->
-**Testing:**
+**Testing:** Not yet established
 
-<!-- What dependency injection approach? (Built-in DI, manual, none, etc.) -->
-**DI approach:**
+**DI approach:** React Context — `StoreProvider` wraps the app and provides the TinyBase store instance
 
-<!-- What logging approach? (ILogger, console, Serilog, Pino, etc.) -->
-**Logging:**
+**Logging:** None — client-side only app with no logging infrastructure
 
-<!-- What's the error handling strategy? (Result pattern, exceptions, error boundaries, etc.) -->
-**Error handling:**
+**Error handling:** Silent catch blocks for localStorage parse/quota errors. No error boundaries yet.
 
 ## Project-Specific Overrides
 
-<!-- Add overrides here when this project deviates from universal standards.
-     Always log the reason in Decisions.md. Example:
-
-     ### Override: Use `snake_case` for API response fields
-     - **Universal standard:** camelCase for JS/TS
-     - **This project:** snake_case (to match external Paylocity API format)
-     - **Decision:** DEC-003
--->
+<!-- None currently — following universal standards -->
 
 ## Established Patterns
 
-<!-- Claude Code: Add entries as patterns emerge during development.
-     These are patterns unique to THIS project that should be consistently followed. -->
+### Pattern: Store Helper Functions
+- **Use when:** Adding, modifying, or querying data in TinyBase
+- **Implementation:** Export pure functions from `store.ts` that accept a `Store` instance as the first argument. Each function generates a UUID, calls `store.setRow()`, and returns the new row ID. This keeps mutation logic centralized and testable outside React.
+- **Example location:** `/src/lib/store.ts` — `addMessage()`, `addPoll()`, `votePoll()`, `createTrip()`
 
-### Pattern: [Name]
-- **Use when:**
-- **Implementation:**
-- **Example location:** `/src/...`
+### Pattern: Reactive Table Hooks
+- **Use when:** Rendering data from a TinyBase table in a component
+- **Implementation:** Use `useTableRows(tableName, filterField?, filterValue?)` for filtered lists or `useRow(tableName, rowId)` for single records. Both use `useSyncExternalStore` with TinyBase listeners for efficient re-rendering. Returns are JSON-parsed each render (serialization is the snapshot).
+- **Example location:** `/src/lib/store-context.tsx` — `useTableRows()`, `useRow()`
+
+### Pattern: Inline Create Form + List
+- **Use when:** Building a feature page (polls, itinerary, chat)
+- **Implementation:** Each feature page renders a creation form at the top and a scrollable list below. No separate routes for create/edit. Form state is managed with `useState` hooks. On submit, call the relevant store helper and clear the form.
+- **Example location:** `/src/app/trip/[tripId]/polls/page.tsx`
+
+### Pattern: Semantic Color Tokens
+- **Use when:** Styling any component
+- **Implementation:** Always use semantic Tailwind classes (`bg-surface`, `text-foreground`, `border-border`) mapped from CSS custom properties. Never use raw Tailwind colors (`bg-white`, `text-gray-500`). See DesignSystem.md for the full token list.
+- **Example location:** `/src/app/globals.css`, any page component
 
 ## Anti-Patterns (Project-Specific)
 
-<!-- Things we've tried in THIS project that didn't work.
-     Cross-reference Learnings.md for the full story. -->
+- **Don't use raw color classes** — `bg-white`, `text-gray-*`, etc. are banned. Use semantic tokens only.
+- **Don't store booleans in TinyBase** — Use `0` and `1` numbers. TinyBase schema only supports `string` and `number` types.
+- **Don't store arrays/objects in TinyBase cells** — Use `JSON.stringify()` for complex values (see `poll.options`).
 
 ## File & Folder Conventions
 
-<!-- Claude Code: Fill in when the project structure stabilizes -->
-
-<!-- Where do new components go? -->
-<!-- Where do tests live relative to source? -->
-<!-- How are shared utilities organized? -->
-<!-- Are there barrel exports? Index files? -->
+- **Pages:** `/src/app/` using Next.js App Router conventions. Dynamic routes use `[param]` folders.
+- **Components:** `/src/components/ui/` for styled primitives. Feature-specific components live inline in page files for now.
+- **Logic:** `/src/lib/` for store, context, and utilities. `store.ts` for schema + mutations, `store-context.tsx` for React integration, `utils.ts` for pure helpers.
+- **No barrel exports** — Import directly from file paths.
+- **All components are client components** — `"use client"` directive at top of every component file (required because TinyBase and React hooks are client-only).
 
 ## API Conventions
 
-<!-- Claude Code: Fill in when API patterns are established -->
-
-<!-- What's the URL structure? -->
-<!-- What's the request/response format? -->
-<!-- How is pagination handled? -->
-<!-- How are errors returned to clients? -->
-<!-- What status codes are used for what? -->
+No API routes. This is a fully client-side application. All data operations go through TinyBase store helper functions in `/src/lib/store.ts`.
