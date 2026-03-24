@@ -81,11 +81,11 @@ export default function HomePage() {
       <div className="flex h-full flex-col items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
               <Anchor className="h-8 w-8" />
             </div>
             <h1 className="text-2xl font-bold">Voyage Board</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-foreground-secondary">
               Group chat for vacations & cruises
             </p>
           </div>
@@ -115,11 +115,11 @@ export default function HomePage() {
     <div className="flex h-full flex-col items-center p-6">
       <div className="w-full max-w-sm space-y-6 pt-12">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
             <Anchor className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-bold">Voyage Board</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-foreground-secondary">
             Hey {currentUser?.name}!
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function HomePage() {
 
             {tripList.length > 0 && (
               <div className="pt-4">
-                <h2 className="mb-2 text-sm font-medium text-gray-500">
+                <h2 className="mb-2 text-sm font-medium text-foreground-secondary">
                   Your Trips
                 </h2>
                 <div className="space-y-2">
@@ -157,15 +157,15 @@ export default function HomePage() {
                         setCurrentTripId(trip.id as string);
                         router.push(`/trip/${trip.id}`);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-3 text-left transition-colors hover:bg-gray-50 active:bg-gray-100"
+                      className="flex w-full items-center justify-between rounded-lg border border-border bg-surface p-3 text-left transition-colors hover:bg-surface-hover active:bg-surface-active"
                     >
                       <div>
                         <div className="font-medium">{trip.name as string}</div>
-                        <div className="text-xs text-gray-400">
+                        <div className="text-xs text-foreground-tertiary">
                           Code: {trip.code as string}
                         </div>
                       </div>
-                      <span className="text-gray-400">&rarr;</span>
+                      <span className="text-foreground-tertiary">&rarr;</span>
                     </button>
                   ))}
                 </div>
@@ -177,7 +177,7 @@ export default function HomePage() {
                 setCurrentUser(null);
                 setView("name");
               }}
-              className="w-full pt-2 text-center text-xs text-gray-400 hover:text-gray-600"
+              className="w-full pt-2 text-center text-xs text-foreground-tertiary hover:text-foreground-secondary"
             >
               Switch user
             </button>
@@ -231,7 +231,7 @@ export default function HomePage() {
                 className="text-center text-lg tracking-widest"
               />
               {error && (
-                <p className="mt-1 text-sm text-red-500">{error}</p>
+                <p className="mt-1 text-sm text-destructive">{error}</p>
               )}
             </div>
             <div className="flex gap-2">

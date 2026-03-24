@@ -65,7 +65,7 @@ export default function PollsPage() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Polls</h2>
-            <p className="text-sm text-gray-500">Vote on activities & plans</p>
+            <p className="text-sm text-foreground-secondary">Vote on activities & plans</p>
           </div>
           <Button
             size="sm"
@@ -85,7 +85,7 @@ export default function PollsPage() {
         {showCreate && (
           <form
             onSubmit={handleCreatePoll}
-            className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+            className="mb-6 rounded-xl border border-border bg-surface p-4"
           >
             <div className="mb-3">
               <Input
@@ -113,7 +113,7 @@ export default function PollsPage() {
                     <button
                       type="button"
                       onClick={() => handleRemoveOption(i)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-foreground-tertiary hover:text-foreground-secondary"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -126,7 +126,7 @@ export default function PollsPage() {
                 <button
                   type="button"
                   onClick={handleAddOption}
-                  className="text-sm text-blue-500 hover:underline"
+                  className="text-sm text-accent hover:underline"
                 >
                   + Add option
                 </button>
@@ -147,7 +147,7 @@ export default function PollsPage() {
 
         {/* Polls List */}
         {sortedPolls.length === 0 && !showCreate && (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-foreground-tertiary">
             <BarChart3 className="mb-3 h-8 w-8" />
             <p className="mb-1">No polls yet</p>
             <p>Create one to get the group voting!</p>
@@ -170,12 +170,12 @@ export default function PollsPage() {
             return (
               <div
                 key={poll.id as string}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border bg-surface p-4"
               >
                 <div className="mb-1 flex items-start justify-between">
                   <h3 className="font-medium">{poll.question as string}</h3>
                 </div>
-                <p className="mb-3 text-xs text-gray-400">
+                <p className="mb-3 text-xs text-foreground-tertiary">
                   by {poll.authorName as string} &middot;{" "}
                   {formatTime(poll.createdAt as number)}
                 </p>
@@ -201,22 +201,22 @@ export default function PollsPage() {
                         className={cn(
                           "relative flex w-full items-center justify-between overflow-hidden rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                           isMyVote
-                            ? "border-blue-300 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            ? "border-accent bg-accent-subtle"
+                            : "border-border hover:border-foreground-tertiary hover:bg-surface-hover"
                         )}
                       >
                         {/* Progress bar */}
                         <div
-                          className="absolute inset-0 bg-blue-100/50 transition-all"
+                          className="absolute inset-0 bg-accent-subtle transition-all"
                           style={{ width: `${pct}%` }}
                         />
                         <span className="relative flex items-center gap-2">
                           {isMyVote && (
-                            <Check className="h-3.5 w-3.5 text-blue-600" />
+                            <Check className="h-3.5 w-3.5 text-accent" />
                           )}
                           {option}
                         </span>
-                        <span className="relative text-xs text-gray-500">
+                        <span className="relative text-xs text-foreground-secondary">
                           {optVotes} ({pct}%)
                         </span>
                       </button>
@@ -224,7 +224,7 @@ export default function PollsPage() {
                   })}
                 </div>
 
-                <p className="mt-2 text-xs text-gray-400">
+                <p className="mt-2 text-xs text-foreground-tertiary">
                   {totalVotes} vote{totalVotes !== 1 ? "s" : ""}
                 </p>
               </div>

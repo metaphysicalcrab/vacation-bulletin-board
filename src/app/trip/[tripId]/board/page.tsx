@@ -25,19 +25,19 @@ export default function BoardPage() {
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="p-4">
         <h2 className="mb-1 text-lg font-semibold">Bulletin Board</h2>
-        <p className="mb-4 text-sm text-gray-500">
+        <p className="mb-4 text-sm text-foreground-secondary">
           Pinned messages and announcements
         </p>
 
         {pinned.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-center text-sm text-foreground-tertiary">
             <Pin className="mb-3 h-8 w-8" />
             <p className="mb-1">No pinned messages yet</p>
             <p>
               Pin important messages from{" "}
               <Link
                 href={`/trip/${tripId}`}
-                className="text-blue-500 hover:underline"
+                className="text-accent hover:underline"
               >
                 chat
               </Link>{" "}
@@ -49,26 +49,26 @@ export default function BoardPage() {
             {pinned.map((msg) => (
               <div
                 key={msg.id as string}
-                className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border-accent bg-surface p-4"
               >
                 <div className="mb-2 flex items-start justify-between">
                   <div>
                     <span className="text-sm font-medium">
                       {msg.authorName as string}
                     </span>
-                    <span className="ml-2 text-xs text-gray-400">
+                    <span className="ml-2 text-xs text-foreground-tertiary">
                       {formatTime(msg.timestamp as number)}
                     </span>
                   </div>
                   <button
                     onClick={() => handleUnpin(msg.id as string)}
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-foreground-tertiary transition-colors hover:bg-surface-hover hover:text-foreground-secondary"
                   >
                     <PinOff className="h-3.5 w-3.5" />
                     Unpin
                   </button>
                 </div>
-                <p className="text-sm leading-relaxed text-gray-800">
+                <p className="text-sm leading-relaxed text-foreground">
                   {msg.text as string}
                 </p>
               </div>
@@ -78,10 +78,10 @@ export default function BoardPage() {
       </div>
 
       {pinned.length > 0 && (
-        <div className="mt-auto border-t border-gray-100 p-4 text-center">
+        <div className="mt-auto border-t border-border-subtle p-4 text-center">
           <Link
             href={`/trip/${tripId}`}
-            className="inline-flex items-center gap-1 text-sm text-blue-500 hover:underline"
+            className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
           >
             <MessageCircle className="h-4 w-4" />
             Go to chat to pin more messages

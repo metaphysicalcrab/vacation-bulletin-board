@@ -19,6 +19,17 @@ TEMPLATE — Copy for each new decision:
 - **Related:** Links to relevant learnings, architecture sections, or other decisions.
 -->
 
+## DEC-002 — Dark-Only Theme with Warm Copper & Taupe Palette
+- **Date:** 2026-03-24
+- **Status:** Accepted
+- **Context:** App needed a visual theme. User requested dark mode as the default with warm copper and taupe colors.
+- **Options Considered:**
+  1. **Light/dark toggle** — Pros: user choice / Cons: doubles CSS maintenance, more complexity
+  2. **Dark-only with semantic tokens** — Pros: simpler, consistent brand identity / Cons: no light option
+- **Decision:** Dark-only theme using CSS custom properties mapped to Tailwind via `@theme inline`. Warm copper (#c2875a) for accents, deep taupe (#1a1614) backgrounds, warm gray surfaces (#292524).
+- **Consequences:** All color classes must use semantic tokens (e.g., `bg-surface` not `bg-white`). If a light mode is needed later, add a `.light` class variant with overridden CSS variables.
+- **Related:** See DesignSystem.md for full token reference.
+
 ## DEC-001 — Adopt Dev Framework for Project Intelligence
 - **Date:** 2026-03-23
 - **Status:** Accepted
